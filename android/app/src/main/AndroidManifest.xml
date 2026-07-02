@@ -2,6 +2,15 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Android 11+ package visibility: allow querying/launching Orbot (Tor).
+         Without this, getPackageInfo/getLaunchIntentForPackage silently fail. -->
+    <queries>
+        <package android:name="org.torproject.android" />
+    </queries>
+
+    <!-- Required to run our own VpnService for in-app DoH. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"
@@ -22,5 +31,16 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- In-app DoH tunnel. BIND_VPN_SERVICE + the VpnService intent-filter
+           are mandatory for a VpnService. -->
+      <service
+        android:name=".dns.DnsVpnService"
+        android:permission="android.permission.BIND_VPN_SERVICE"
+        android:exported="false">
+        <intent-filter>
+          <action android:name="android.net.VpnService" />
+        </intent-filter>
+      </service>
     </application>
 </manifest>

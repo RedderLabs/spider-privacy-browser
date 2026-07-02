@@ -1,0 +1,8 @@
+{
+  "name": "@spider/privacy-js",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Fingerprint-hardening JS bundle injected into every page (pure, config-driven).",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

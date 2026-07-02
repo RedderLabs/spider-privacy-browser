@@ -1,0 +1,8 @@
+{
+  "name": "@spider/network",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Private-network config: DoH providers and (future) VPN helpers.",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

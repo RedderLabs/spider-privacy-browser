@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Spider Privacy Browser - Navigation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-bright": "#39393c",
+            "on-primary": "#32009a",
+            "tertiary-fixed-dim": "#00e478",
+            "error": "#ffb4ab",
+            "background": "#0D0D0F",
+            "outline-variant": "#484555",
+            "on-primary-fixed-variant": "#4918c8",
+            "surface-container-high": "#2a2a2d",
+            "primary-container": "#947dff",
+            "outline": "#938ea1",
+            "on-tertiary-fixed": "#00210c",
+            "error-container": "#93000a",
+            "primary": "#cabeff",
+            "primary-fixed": "#e6deff",
+            "on-tertiary-fixed-variant": "#005227",
+            "secondary-container": "#00d2fd",
+            "on-tertiary-container": "#003115",
+            "on-surface": "#e4e1e6",
+            "on-tertiary": "#003919",
+            "inverse-surface": "#e4e1e6",
+            "on-secondary-container": "#005669",
+            "tertiary": "#00e478",
+            "primary-fixed-dim": "#cabeff",
+            "surface-container-highest": "#353438",
+            "on-primary-container": "#2b0088",
+            "surface-dim": "#131316",
+            "on-error": "#690005",
+            "surface-container-lowest": "#0e0e11",
+            "on-error-container": "#ffdad6",
+            "inverse-primary": "#613de0",
+            "secondary-fixed": "#b4ebff",
+            "surface-variant": "#353438",
+            "on-secondary-fixed": "#001f27",
+            "secondary": "#a2e7ff",
+            "surface-tint": "#cabeff",
+            "tertiary-fixed": "#61ff98",
+            "tertiary-container": "#00a756",
+            "on-secondary": "#003642",
+            "inverse-on-surface": "#303033",
+            "surface": "#131316",
+            "secondary-fixed-dim": "#3cd7ff",
+            "on-secondary-fixed-variant": "#004e5f",
+            "on-primary-fixed": "#1c0062",
+            "on-background": "#e4e1e6",
+            "surface-container": "#1f1f22",
+            "on-surface-variant": "#c9c4d8",
+            "surface-container-low": "#1b1b1e"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "safe-area-bottom": "34px",
+            "stack-sm": "8px",
+            "gutter": "12px",
+            "stack-lg": "24px",
+            "stack-md": "16px",
+            "container-margin": "20px"
+          },
+          "fontFamily": {
+            "headline-lg": ["Inter"],
+            "label-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "mono-code": ["JetBrains Mono"],
+            "headline-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-md": ["Inter"],
+            "body-md": ["Inter"]
+          },
+          "fontSize": {
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+            "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+            "mono-code": ["12px", {"lineHeight": "18px", "fontWeight": "400"}],
+            "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .glass-effect {
+      background: rgba(34, 34, 40, 0.4);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .active-glow {
+      box-shadow: 0 0 15px rgba(124, 92, 252, 0.15);
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .nav-item-active {
+      background: rgba(202, 190, 255, 0.1);
+      color: #cabeff;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md overflow-hidden">
+<!-- Main Background Container (Visual Content behind drawer) -->
+<main class="fixed inset-0 z-0 flex flex-col items-center justify-center opacity-40">
+<div class="p-8 text-center">
+<span class="material-symbols-outlined text-primary text-6xl mb-4">shield</span>
+<h1 class="font-headline-lg text-headline-lg mb-2">Vault</h1>
+<p class="text-on-surface-variant font-body-md">Your privacy is shielded.</p>
+</div>
+</main>
+<!-- Navigation Drawer Backdrop -->
+<div class="fixed inset-0 bg-black/60 z-40 transition-opacity duration-300 opacity-100 pointer-events-auto" id="drawer-overlay"></div>
+<!-- Left Navigation Drawer -->
+<aside class="fixed left-0 top-0 bottom-0 w-[85%] max-w-[320px] bg-surface-container z-50 transform transition-transform duration-300 ease-out translate-x-0 shadow-2xl flex flex-col overflow-hidden" id="nav-drawer">
+<!-- Top Header Section -->
+<header class="pt-12 pb-6 px-container-margin border-b border-white/5 bg-surface-container-low/50 relative">
+<div class="absolute top-6 right-6">
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/20 bg-surface-bright relative">
+<img class="w-full h-full object-cover" data-alt="A professional high-resolution headshot of a person with minimalist aesthetic, soft dramatic studio lighting coming from the side, set against a deep neutral charcoal background. The style is clean and modern, emphasizing clarity and tech-forward sophistication consistent with a premium digital vault application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHp9Vj3HHyxkDGlGeQmXQvxSHAhxkfedKufYNVTzOq60GBEWfviddhoPQC6V7NhJXi-xgH3-DJgOtoyzD8mwDAd66v_5xlVtRHjC25r3umfEkHXWPCYz1_U0fmIkCcqoHDtEt801VZXQc2bzSrqsraurOFNv77Y_syT_3julj8SOkrJGMeHyzBOIv_4wpt_nrT04CCZf3xAhMejyfF1-zl7a1vPZF0X3Y8eLdAyW1QZgTOHP-9nfXttYb_PBBW6xVQGgIXyO-6qOft"/>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Alex Rivera</h2>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-md text-label-md text-on-surface-variant">Sync Active</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Scrollable Content Area -->
+<div class="flex-1 overflow-y-auto py-stack-md space-y-stack-lg custom-scrollbar">
+<!-- Main Navigation List -->
+<nav class="px-3">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-white/5 transition-all text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">add_box</span>
+<span class="font-label-lg text-label-lg">New Private Tab</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-white/5 transition-all text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">bookmarks</span>
+<span class="font-label-lg text-label-lg">Bookmarks</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-white/5 transition-all text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">history</span>
+<span class="font-label-lg text-label-lg">History</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-white/5 transition-all text-on-surface-variant group" href="#">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">download</span>
+<span class="font-label-lg text-label-lg">Downloads</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Security Section -->
+<div class="px-container-margin">
+<div class="flex items-center justify-between mb-stack-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest opacity-60">Security</span>
+<span class="w-12 h-[1px] bg-white/10"></span>
+</div>
+<ul class="space-y-2">
+<li>
+<a class="flex items-center justify-between p-4 rounded-xl glass-effect active-glow group" href="#">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">vpn_lock</span>
+<span class="font-label-lg text-label-lg text-on-surface">Vault VPN</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary/10 text-[10px] font-bold text-secondary border border-secondary/20">LIVE</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-all group" href="#">
+<span class="material-symbols-outlined text-tertiary">security</span>
+<span class="font-label-lg text-label-lg text-on-surface">Tracker Blocker</span>
+<span class="ml-auto text-tertiary font-label-md">On</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-4 p-4 rounded-xl hover:bg-white/5 transition-all group" href="#">
+<span class="material-symbols-outlined text-primary">password</span>
+<span class="font-label-lg text-label-lg text-on-surface">Passkeys</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Privacy Report Card -->
+<div class="px-container-margin">
+<div class="p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 border border-white/5 relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-125 transition-transform duration-500">
+<span class="material-symbols-outlined text-8xl">verified_user</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-end justify-between mb-2">
+<h3 class="font-label-lg text-label-lg text-primary">Privacy Score</h3>
+<span class="font-headline-md text-headline-md text-white">98</span>
+</div>
+<div class="w-full h-1.5 bg-white/10 rounded-full mb-3">
+<div class="h-full bg-primary rounded-full" style="width: 98%"></div>
+</div>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">
+              3,421 trackers blocked this week. Your digital footprint is invisible.
+            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Actions Footer -->
+<footer class="mt-auto p-4 space-y-2 border-t border-white/5 bg-surface-container-low/30">
+<div class="grid grid-cols-2 gap-2">
+<button class="flex items-center justify-center gap-2 py-3 rounded-xl hover:bg-white/5 transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-label-md">Settings</span>
+</button>
+<button class="flex items-center justify-center gap-2 py-3 rounded-xl hover:bg-white/5 transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+<span class="font-label-md">Support</span>
+</button>
+</div>
+<div class="flex flex-col items-center gap-1 pt-2 pb-safe-area-bottom">
+<span class="font-label-md text-[10px] text-on-surface-variant/40 tracking-wider">VERSION 2.4.0 (STABLE)</span>
+<div class="flex gap-4">
+<a class="text-[10px] text-on-surface-variant/30 hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-[10px] text-on-surface-variant/30 hover:text-primary transition-colors" href="#">Terms of Use</a>
+</div>
+</div>
+</footer>
+</aside>
+<!-- Interactive Script for micro-interactions -->
+<script>
+    const drawer = document.getElementById('nav-drawer');
+    const overlay = document.getElementById('drawer-overlay');
+
+    // Simulate drawer closing on overlay click (for demo purposes)
+    overlay.addEventListener('click', () => {
+      drawer.style.transform = 'translateX(-100%)';
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.classList.add('pointer-events-none'), 300);
+    });
+
+    // Handle touch interactions for that premium mobile feel
+    let touchStartX = 0;
+    drawer.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    drawer.addEventListener('touchend', e => {
+      let touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 50) { // Swiped left
+        drawer.style.transform = 'translateX(-100%)';
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.classList.add('pointer-events-none'), 300);
+      }
+    });
+
+    // Add subtle hover tracking for glass cards
+    const cards = document.querySelectorAll('.glass-effect');
+    cards.forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
+    });
+  </script>
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(202, 190, 255, 0.1);
+      border-radius: 10px;
+    }
+    
+    /* Hover effect for glass items */
+    .glass-effect:hover {
+      background: rgba(202, 190, 255, 0.08);
+      border-color: rgba(202, 190, 255, 0.2);
+    }
+  </style>
+</body></html>
