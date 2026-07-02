@@ -1,9 +1,18 @@
 import React, { useRef, useImperativeHandle, forwardRef } from 'react';
-import WebView, {
+import WebViewImport, {
   WebViewProps,
   WebViewNavigation,
   WebViewMessageEvent,
 } from 'react-native-webview';
+
+// react-native-webview's index.d.ts types WebView as `class WebView<P = undefined>`,
+// so its props resolve to `WebViewProps & undefined` = `never` under React 19's
+// stricter JSX (rejecting every attribute). Cast to a props-accepting component for
+// rendering; keep the class instance type for the imperative ref.
+type WebViewInstance = InstanceType<typeof WebViewImport>;
+const WebView = WebViewImport as unknown as React.ComponentType<
+  WebViewProps & { ref?: React.Ref<WebViewInstance> }
+>;
 // The error-event types aren't re-exported from the package root (only from the
 // lib types module), so import them from there directly.
 import type {
@@ -48,7 +57,7 @@ export interface HardenedWebViewHandle {
 
 export const HardenedWebView = forwardRef<HardenedWebViewHandle, HardenedWebViewProps>(
   ({ url, onNavigationStateChange, onMessage, onBlocked, onLoadError, onLoadStart, style, androidLayerType }, ref) => {
-    const webViewRef = useRef<WebView>(null);
+    const webViewRef = useRef<WebViewInstance>(null);
     const globalEnabled = useSettingsStore((s) => s.hardeningEnabled);
     const clearOnClose = useSettingsStore((s) => s.clearOnClose);
     const blockCookies = useSettingsStore((s) => s.blockCookies);

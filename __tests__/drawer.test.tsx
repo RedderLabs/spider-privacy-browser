@@ -1,66 +1,43 @@
 /**
  * @format
  * Drawer: mounts when visible, shows only REAL state (no fake account/sync),
- * and its actions fire the wired callbacks.
+ * and its actions fire the wired callbacks. Uses @testing-library/react-native
+ * (auto-cleanup unmounts before Jest teardown, so the Animated drawer doesn't
+ * crash on the deprecated react-test-renderer under React 19).
  */
 import 'react-native';
 import React from 'react';
 import {describe, it, expect, jest} from '@jest/globals';
-import {act, create, ReactTestRenderer} from 'react-test-renderer';
+import {render, screen, fireEvent} from '@testing-library/react-native';
 import {Drawer} from '../src/components/Drawer';
 
-const texts = (tree: ReactTestRenderer): string[] => {
-  const out: string[] = [];
-  const walk = (node: any) => {
-    if (node == null) {return;}
-    if (typeof node === 'string') {out.push(node); return;}
-    if (Array.isArray(node)) {node.forEach(walk); return;}
-    if (node.children) {node.children.forEach(walk);}
-  };
-  walk(tree.toJSON());
-  return out;
-};
-
 describe('Drawer', () => {
-  it('renders real content when visible and fires actions', async () => {
+  it('renders real content when visible and fires actions', () => {
     const onClose = jest.fn();
     const onNewTab = jest.fn();
     const onOpenTabs = jest.fn();
     const onOpenSettings = jest.fn();
 
-    let tree: ReactTestRenderer | undefined;
-    await act(async () => {
-      tree = create(
-        <Drawer
-          visible
-          onClose={onClose}
-          onNewTab={onNewTab}
-          onOpenTabs={onOpenTabs}
-          onOpenSettings={onOpenSettings}
-        />,
-      );
-    });
-    await act(async () => {
-      await Promise.resolve();
-    });
+    render(
+      <Drawer
+        visible
+        onClose={onClose}
+        onNewTab={onNewTab}
+        onOpenTabs={onOpenTabs}
+        onOpenSettings={onOpenSettings}
+      />,
+    );
 
-    // Shows real sections (Spanish default): security + tracker blocker + score.
-    const joined = texts(tree!).join(' | ');
-    expect(joined).toContain('SEGURIDAD');
-    expect(joined).toContain('Bloqueador de rastreadores');
-    expect(joined).toContain('Puntuación de privacidad');
+    // Real sections (Spanish default): security + tracker blocker + score.
+    expect(screen.getByText('SEGURIDAD')).toBeTruthy();
+    expect(screen.getByText('Bloqueador de rastreadores')).toBeTruthy();
+    expect(screen.getByText('Puntuación de privacidad')).toBeTruthy();
     // No aspirational/fake account UI from the mockup.
-    expect(joined).not.toContain('Alex');
-    expect(joined).not.toContain('Sync');
+    expect(screen.queryByText(/Alex/)).toBeNull();
+    expect(screen.queryByText(/Sync/)).toBeNull();
 
     // The "new private tab" action is wired.
-    const newTabNode = tree!.root.findAll((n) => n.props.onPress === onNewTab)[0];
-    expect(newTabNode).toBeTruthy();
-    await act(async () => {
-      newTabNode.props.onPress();
-    });
+    fireEvent.press(screen.getByText('Nueva pestaña privada'));
     expect(onNewTab).toHaveBeenCalledTimes(1);
-
-    tree!.unmount();
   });
 });
