@@ -10,6 +10,7 @@ import {
   ScrollView,
   BackHandler,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HardenedWebView, HardenedWebViewHandle, LoadErrorInfo } from '../components/HardenedWebView';
 import { HomeContent } from './HomeContent';
 import { useTabStore } from '../store/tabStore';
@@ -58,6 +59,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
   const [capturing, setCapturing] = useState(false);
   const webViewRef = useRef<HardenedWebViewHandle>(null);
   const webShotRef = useRef<View>(null);
+  const insets = useSafeAreaInsets();
 
   // Per-site hardening state for the active domain (Task 9). The top status
   // badge reflects the EFFECTIVE state for this site (which may differ from the
@@ -365,7 +367,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
             activeOpacity={1}
             onPress={() => setShowBlocked(false)}
           />
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { paddingBottom: 32 + insets.bottom }]}>
             <View style={styles.modalHandle} />
             <View style={styles.modalTitleRow}>
               <ShieldCheckIcon size={16} color={colors.primary} bg="#1A1A1F" />
@@ -407,7 +409,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
             activeOpacity={1}
             onPress={() => setShowSiteSheet(false)}
           />
-          <View style={styles.modalSheet}>
+          <View style={[styles.modalSheet, { paddingBottom: 32 + insets.bottom }]}>
             <View style={styles.modalHandle} />
             <View style={styles.modalTitleRow}>
               <ShieldCheckIcon size={16} color={colors.primary} bg="#1A1A1F" />

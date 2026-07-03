@@ -55,6 +55,19 @@ yarn-error.log
 # Bundle artifact
 *.jsbundle
 
+# Built app binaries (release APKs are generated, never committed)
+*.apk
+*.aab
+
+# Local scratch: ad-hoc screenshots / notes not part of the app
+cookies_jpg/
+
+# Release signing key — MUST stay out of the repo (Play upload key).
+# (debug.keystore is intentionally kept above; it is the public standard key.)
+release.keystore
+upload.keystore
+keystore.properties
+
 # Ruby / CocoaPods
 **/Pods/
 /vendor/bundle/

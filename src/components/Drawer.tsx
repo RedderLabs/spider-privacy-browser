@@ -20,11 +20,13 @@ import {
   Switch,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../i18n';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTabStore } from '../store/tabStore';
 import { colors } from '../theme/theme';
-import { ShieldCheckIcon, SettingsIcon, OnionIcon, TabsIcon, GlobeIcon } from './icons';
+import { APP_VERSION } from '../version';
+import { ShieldCheckIcon, SettingsIcon, OnionIcon, TabsIcon, GlobeIcon, InfoIcon } from './icons';
 
 const WIDTH = Math.min(320, Dimensions.get('window').width * 0.82);
 const PANEL_BG = '#141018';
@@ -34,13 +36,15 @@ interface DrawerProps {
   onClose: () => void;
   onOpenSettings: () => void;
   onOpenTabs: () => void;
+  onOpenAbout: () => void;
   onNewTab: () => void;
 }
 
-export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings, onOpenTabs, onNewTab }) => {
+export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings, onOpenTabs, onOpenAbout, onNewTab }) => {
   const t = useT();
   const settings = useSettingsStore();
   const tabCount = useTabStore((s) => s.tabs.length);
+  const insets = useSafeAreaInsets();
 
   // Keep the Modal mounted through the slide-out animation.
   const [mounted, setMounted] = useState(visible);
@@ -84,7 +88,11 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
   return (
     <Modal transparent visible={mounted} animationType="none" onRequestClose={onClose}>
       <View style={styles.root}>
-        <Animated.View style={[styles.panel, { width: WIDTH, transform: [{ translateX: tx }] }]}>
+        <Animated.View
+          style={[
+            styles.panel,
+            { width: WIDTH, paddingTop: insets.top + 20, transform: [{ translateX: tx }] },
+          ]}>
           {/* Brand header */}
           <View style={styles.brand}>
             <Image source={require('../../logo.png')} style={styles.logo} resizeMode="contain" />
@@ -114,6 +122,14 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
               <SettingsIcon size={20} color={colors.onSurfaceVariant} bg={PANEL_BG} />
             </View>
             <Text style={styles.itemText}>{t('settingsTitle')}</Text>
+            <Text style={styles.chev}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.item} activeOpacity={0.7} onPress={onOpenAbout}>
+            <View style={styles.itemIcon}>
+              <InfoIcon size={20} color={colors.onSurfaceVariant} bg={PANEL_BG} />
+            </View>
+            <Text style={styles.itemText}>{t('aboutTitle')}</Text>
             <Text style={styles.chev}>›</Text>
           </TouchableOpacity>
 
@@ -161,9 +177,9 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
             <Text style={styles.scoreNumber}>{privacyScore}</Text>
           </TouchableOpacity>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
             <Text style={styles.footerText}>{t('drawerFooter')}</Text>
-            <Text style={styles.version}>Spider Privacy · v0.0.1</Text>
+            <Text style={styles.version}>Spider Privacy · v{APP_VERSION}</Text>
           </View>
         </Animated.View>
 

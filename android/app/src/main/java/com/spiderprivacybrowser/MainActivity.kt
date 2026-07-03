@@ -1,5 +1,6 @@
 package com.spiderprivacybrowser
 
+import android.content.Intent
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -12,6 +13,17 @@ class MainActivity : ReactActivity() {
    * rendering of the component.
    */
   override fun getMainComponentName(): String = "SpiderPrivacyBrowser"
+
+  /**
+   * We are a `singleTask` activity registered as a browser (VIEW/BROWSABLE http(s)).
+   * When a web link is tapped while the app is already running, Android delivers it
+   * here via onNewIntent. super.onNewIntent() lets React Native emit the JS `url`
+   * event; setIntent() keeps getInitialURL() in sync for a subsequent read.
+   */
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+  }
 
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]

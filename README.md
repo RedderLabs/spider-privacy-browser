@@ -1,79 +1,85 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Spider Privacy Browser
 
-# Getting Started
+Un navegador móvil centrado en la privacidad, para Android. La idea es sencilla:
+que puedas navegar sin dejar un rastro que te identifique y sin que un puñado de
+rastreadores publicitarios te sigan de una web a otra. Todo el trabajo de
+protección ocurre en el propio teléfono; nada de tu navegación se recopila ni se
+envía a ningún servidor.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+Está inspirado en el enfoque de Mullvad Browser (endurecer el navegador para que
+todos los usuarios se parezcan entre sí), llevado a un navegador móvil ligero.
 
-## Step 1: Start the Metro Server
+## Qué hace
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+- **Protección contra fingerprinting.** Antes de que cargue cada página se
+  inyecta un pequeño script que añade ruido al canvas, enmascara la GPU (WebGL),
+  bloquea la enumeración de fuentes, normaliza la zona horaria a UTC y limpia las
+  huellas del `navigator`. Cada defensa se puede activar o desactivar.
+- **Bloqueo de rastreadores.** Las peticiones a dominios conocidos de tracking se
+  cortan antes de salir del dispositivo.
+- **DNS cifrado.** Puedes forzar un resolutor DoH/DoT (Cloudflare, Mullvad, Quad9…)
+  para que tus consultas de DNS no viajen en claro.
+- **Red privada opcional.** Enruta el tráfico por Tor delegando en Orbot si lo
+  tienes instalado (no incluimos ni ejecutamos nuestro propio Tor).
+- **Incógnito de verdad.** Las pestañas viven solo en memoria. Al cerrar la app no
+  queda historial, cookies ni sesión: lo único que se recuerda entre arranques es
+  el idioma.
+- **Ajustes por sitio.** Puedes relajar o reforzar el blindaje para un dominio
+  concreto cuando una web se rompe o cuando quieres máxima protección.
 
-To start Metro, run the following command from the _root_ of your React Native project:
+## Requisitos
+
+- Node.js 18 o superior
+- El entorno de desarrollo de React Native para Android (JDK 17, Android SDK)
+
+## Poner en marcha
 
 ```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+npm install
+npm start          # arranca Metro
+npm run android    # compila e instala en un dispositivo o emulador
 ```
 
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
+Para generar un APK de release firmado (usa la clave de debug por defecto; para
+publicar hay que configurar una clave propia):
 
 ```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
+cd android
+./gradlew assembleRelease
 ```
 
-### For iOS
+El APK queda en `android/app/build/outputs/apk/release/`.
+
+## Cómo está organizado
+
+- `App.tsx` — punto de entrada; cambia entre las pantallas (inicio, pestañas,
+  ajustes, acerca de) sin librería de navegación.
+- `src/privacy/` — el corazón de la app: construye el script de endurecimiento a
+  partir de los ajustes activos.
+- `src/components/HardenedWebView.tsx` — el WebView reforzado que inyecta ese
+  script y bloquea rastreadores.
+- `src/store/` — estado con Zustand (pestañas en memoria y ajustes).
+- `packages/` — dos paquetes internos reutilizables: `@spider/privacy-js` (la
+  lógica de endurecimiento, sin dependencias de la app) y `@spider/network`
+  (proveedores de DNS y modos de red).
+- `android/` — proyecto nativo, incluyendo los módulos de DNS privado, VPN de DoH
+  y el puente con Orbot.
+
+## Privacidad
+
+La app no tiene cuentas, ni telemetría, ni analítica, ni SDKs de terceros. No
+depende de los servicios de Google Play. No recopila absolutamente nada: no hay a
+dónde enviarlo porque no existe ese servidor. Puedes comprobarlo revisando el
+código.
+
+## Tests
 
 ```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npm test
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+## Licencia
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Publicado bajo la [GNU Affero General Public License v3.0](LICENSE). Puedes usarlo,
+estudiarlo, modificarlo y redistribuirlo; si lo ofreces como servicio, debes
+compartir tus cambios bajo la misma licencia.

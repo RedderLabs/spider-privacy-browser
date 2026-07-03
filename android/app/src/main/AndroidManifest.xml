@@ -30,6 +30,17 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+
+        <!-- Register as a browser so the app can be set as the default handler
+             for web links and catch http/https URLs tapped in other apps.
+             No host + BROWSABLE + http & https = Android lists it as a "Browser app". -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+            <data android:scheme="https" />
+        </intent-filter>
       </activity>
 
       <!-- In-app DoH tunnel. BIND_VPN_SERVICE + the VpnService intent-filter

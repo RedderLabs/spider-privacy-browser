@@ -329,6 +329,16 @@ export const WarnIcon: React.FC<IconProps & { bg?: string }> = ({ size = 48, col
   </View>
 );
 
+// ⓘ info — a ringed circle with an "i" glyph, for the About entry.
+export const InfoIcon: React.FC<IconProps & { bg?: string }> = ({ size = 20, color = DEFAULT }) => (
+  <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ width: size * 0.9, height: size * 0.9, borderRadius: size * 0.45, borderWidth: 2, borderColor: color, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: size * 0.11, height: size * 0.11, borderRadius: size * 0.06, backgroundColor: color, marginBottom: size * 0.05 }} />
+      <View style={{ width: size * 0.11, height: size * 0.34, borderRadius: size * 0.05, backgroundColor: color }} />
+    </View>
+  </View>
+);
+
 // ⋮ more — three vertical dots.
 export const MoreIcon: React.FC<IconProps> = ({ size = 22, color = DEFAULT }) => (
   <View style={{ height: size, justifyContent: 'center', alignItems: 'center' }}>
