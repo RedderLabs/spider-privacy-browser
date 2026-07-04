@@ -1,0 +1,4 @@
+* Light and dark theme, with a System / Light / Dark selector.
+* In-app encrypted DNS (DoH) over a DNS-only tunnel, now with IPv6 and TCP and a foreground notification.
+* Cleaner navigation: a single menu (the drawer) for settings, plus a quick network picker.
+* Various fixes and stability improvements.

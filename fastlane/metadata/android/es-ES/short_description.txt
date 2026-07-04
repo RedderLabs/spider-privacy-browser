@@ -1,0 +1,1 @@
+Navegador móvil endurecido que bloquea el rastreo y el fingerprinting.

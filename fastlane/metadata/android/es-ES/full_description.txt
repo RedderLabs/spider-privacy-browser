@@ -1,0 +1,21 @@
+Spider Privacy Browser es un navegador ligero para Android construido sobre una idea sencilla: que puedas navegar sin dejar un rastro que te identifique y sin que un puñado de rastreadores publicitarios te sigan de una web a otra. Toda la protección ocurre en tu propio teléfono; nada de tu navegación se recopila ni se envía a ningún sitio.
+
+Está inspirado en el enfoque de Mullvad Browser (endurecer el navegador para que todos los usuarios se parezcan entre sí), llevado a un navegador móvil pequeño.
+
+Qué hace:
+
+* Protección contra fingerprinting. Antes de cargar cada página se inyecta un pequeño script que añade ruido al canvas, enmascara la GPU (WebGL), bloquea la enumeración de fuentes, normaliza la zona horaria a UTC y limpia las huellas del navigator. Cada defensa se puede activar o desactivar.
+
+* Bloqueo de rastreadores. Las peticiones a dominios conocidos de tracking se cortan antes de salir del dispositivo.
+
+* DNS cifrado. Puedes forzar un resolutor DoH/DoT (Cloudflare, Mullvad, Quad9…) para que tus consultas de DNS no viajen en claro, con un túnel DoH dentro de la propia app.
+
+* Red privada opcional. Enruta el tráfico por Tor delegando en Orbot si lo tienes instalado — la app nunca incluye ni ejecuta su propio Tor.
+
+* Incógnito de verdad. Las pestañas viven solo en memoria. Al cerrar la app no queda historial, cookies ni sesión: lo único que se recuerda entre arranques es el idioma y el tema.
+
+* Ajustes por sitio. Relaja o refuerza el blindaje para un dominio concreto cuando una web se rompe o cuando quieres máxima protección.
+
+* Temas claro y oscuro.
+
+Sin cuentas. Sin telemetría. Sin analítica. Sin SDKs de terceros. No depende de los servicios de Google Play. No hay nada que enviar porque no existe ningún servidor — puedes comprobarlo revisando el código.

@@ -1,0 +1,21 @@
+Spider Privacy Browser is a lightweight Android browser built around one idea: you should be able to browse without leaving a trail that identifies you, and without a handful of ad trackers following you from site to site. All the protection happens on your own phone — nothing about your browsing is collected or sent anywhere.
+
+It is inspired by the Mullvad Browser approach (harden the browser so every user looks the same), brought to a small mobile browser.
+
+What it does:
+
+* Fingerprinting protection. Before each page loads, a small script adds noise to canvas reads, masks the GPU (WebGL), blocks font enumeration, normalizes the timezone to UTC and cleans up navigator hints. Every defense can be turned on or off.
+
+* Tracker blocking. Requests to known tracking domains are cut before they leave the device.
+
+* Encrypted DNS. Force a DoH/DoT resolver (Cloudflare, Mullvad, Quad9…) so your DNS queries don't travel in the clear, including an in-app DNS-over-HTTPS tunnel.
+
+* Optional private network. Route traffic through Tor by delegating to Orbot if you have it installed — the app never bundles or runs its own Tor.
+
+* Real incognito. Tabs live only in memory. When you close the app there is no history, cookies or session left behind; the only things remembered between launches are your language and theme.
+
+* Per-site controls. Relax or reinforce the hardening for a specific site when a page breaks or when you want maximum protection.
+
+* Light and dark themes.
+
+No accounts. No telemetry. No analytics. No third-party SDKs. It does not depend on Google Play Services. There is nothing to send because there is no server — you can verify it by reading the source.

@@ -1,0 +1,4 @@
+* Tema claro y oscuro, con selector Sistema / Claro / Oscuro.
+* DNS cifrado (DoH) dentro de la app sobre un túnel solo-DNS, ahora con soporte IPv6 y TCP y notificación persistente.
+* Navegación más limpia: un único menú (el panel lateral) para los ajustes y un selector rápido de red.
+* Varias correcciones y mejoras de estabilidad.

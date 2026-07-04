@@ -1,0 +1,1 @@
+A hardened mobile browser that blocks tracking and fingerprinting.
