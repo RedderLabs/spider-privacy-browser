@@ -19,6 +19,7 @@ const es = {
   navShield: 'Escudo',
   navShieldOff: 'Off',
   navSettings: 'Ajustes',
+  navMenu: 'Menú',
 
   // BrowserScreen
   statusEncrypted: 'CIFRADO',
@@ -122,6 +123,12 @@ const es = {
   historySub: 'Nunca guarda el historial de navegación',
   langTitle: 'Idioma',
 
+  // Appearance (theme)
+  secAppearance: 'APARIENCIA',
+  themeSystem: 'Sistema',
+  themeLight: 'Claro',
+  themeDark: 'Oscuro',
+
   // Orbot / network alerts
   comingSoonBody: 'Este túnel aún no está disponible. Llega en la Fase 5 (WireGuard nativo).',
   orbotNotInstalledTitle: 'Orbot no instalado',
@@ -139,6 +146,7 @@ const en: typeof es = {
   navShield: 'Shield',
   navShieldOff: 'Off',
   navSettings: 'Settings',
+  navMenu: 'Menu',
 
   // BrowserScreen
   statusEncrypted: 'ENCRYPTED',
@@ -241,6 +249,12 @@ const en: typeof es = {
   historyTitle: 'No history',
   historySub: 'Never save browsing history',
   langTitle: 'Language',
+
+  // Appearance (theme)
+  secAppearance: 'APPEARANCE',
+  themeSystem: 'System',
+  themeLight: 'Light',
+  themeDark: 'Dark',
 
   // Orbot / network alerts
   comingSoonBody: 'This tunnel is not available yet. It arrives in Phase 5 (native WireGuard).',

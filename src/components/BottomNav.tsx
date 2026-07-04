@@ -2,11 +2,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useT } from '../i18n';
-import { colors, surfaces, radius, spacing } from '../theme/theme';
-import { SearchIcon, TabsIcon, SettingsIcon, ShieldCheckIcon } from './icons';
-
-// Surface tone behind the nav pill, used to punch "cutout" details in the icons.
-const NAV_SURFACE = '#1c1c20';
+import { radius, spacing, type Palette, type Surfaces } from '../theme/theme';
+import { useTheme } from '../theme/ThemeContext';
+import { SearchIcon, TabsIcon, MenuIcon, ShieldCheckIcon } from './icons';
 
 export interface BottomNavProps {
   active: 'browse' | 'tabs';
@@ -15,7 +13,8 @@ export interface BottomNavProps {
   onBrowse: () => void;
   onTabs: () => void;
   onToggleShield: () => void;
-  onSettings: () => void;
+  // Opens the app menu (Drawer) — the single hub for Settings / About / Network.
+  onMenu: () => void;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
@@ -25,9 +24,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onBrowse,
   onTabs,
   onToggleShield,
-  onSettings,
+  onMenu,
 }) => {
   const t = useT();
+  const { colors, surfaces } = useTheme();
+  const styles = React.useMemo(() => makeStyles(colors, surfaces), [colors, surfaces]);
+  // Surface tone behind the nav pill, used to punch "cutout" details in the icons.
+  const navSurface = colors.surfaceContainer;
   const browseColor = active === 'browse' ? colors.primary : colors.muted;
   const tabsColor = active === 'tabs' ? colors.primary : colors.muted;
   return (
@@ -54,22 +57,22 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <ShieldCheckIcon
           size={20}
           color={shieldActive ? colors.primary : colors.muted}
-          bg={NAV_SURFACE}
+          bg={navSurface}
         />
         <Text style={[styles.navLabel, shieldActive && styles.navLabelActive]}>
           {shieldActive ? t('navShield') : t('navShieldOff')}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.navItem} onPress={onSettings}>
-        <SettingsIcon size={20} color={colors.muted} bg={NAV_SURFACE} />
-        <Text style={styles.navLabel}>{t('navSettings')}</Text>
+      <TouchableOpacity style={styles.navItem} onPress={onMenu}>
+        <MenuIcon size={20} color={colors.muted} />
+        <Text style={styles.navLabel}>{t('navMenu')}</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
   bottomNav: {
     flexDirection: 'row',
     justifyContent: 'space-around',

@@ -9,7 +9,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useSettingsStore } from '../store/settingsStore';
-import { colors } from '../theme/theme';
+import { alpha, type Palette, type Surfaces } from '../theme/theme';
+import { useTheme } from '../theme/ThemeContext';
+import { useResponsive } from '../utils/responsive';
 import { APP_VERSION } from '../version';
 import { InfoIcon } from '../components/icons';
 
@@ -26,13 +28,13 @@ const LINKS = {
   web: 'https://www.noctcom.com',
 };
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0D0D0F' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 56, backgroundColor: 'rgba(13,13,15,0.8)' },
+const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 56, backgroundColor: alpha(colors.bg, 0.8) },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  backIcon: { fontSize: 28, color: '#cabeff', lineHeight: 32 },
+  backIcon: { fontSize: 28, color: colors.primary, lineHeight: 32 },
   headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerText: { fontSize: 18, fontWeight: '700', color: '#cabeff', letterSpacing: -0.3 },
+  headerText: { fontSize: 18, fontWeight: '700', color: colors.primary, letterSpacing: -0.3 },
   headerSpacer: { width: 40 },
 
   scroll: { flex: 1 },
@@ -40,39 +42,41 @@ const styles = StyleSheet.create({
 
   brand: { alignItems: 'center', paddingVertical: 16, marginBottom: 8 },
   logo: { width: 96, height: 82, marginBottom: 8 },
-  wordmark: { fontSize: 20, fontWeight: '800', color: '#f4f2f7' },
+  wordmark: { fontSize: 20, fontWeight: '800', color: colors.onSurface },
   wordmarkAccent: { color: colors.primaryBright },
   version: { fontSize: 12, color: colors.faint, marginTop: 4 },
 
   eyebrow: { fontSize: 11, fontWeight: '700', color: colors.primary, letterSpacing: 0.8, marginBottom: 10, textTransform: 'uppercase' },
-  title: { fontSize: 24, fontWeight: '800', color: '#e4e1e6', lineHeight: 31, letterSpacing: -0.4, marginBottom: 14 },
+  title: { fontSize: 24, fontWeight: '800', color: colors.onSurface, lineHeight: 31, letterSpacing: -0.4, marginBottom: 14 },
 
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#cabeff', marginTop: 26, marginBottom: 10 },
-  body: { fontSize: 14, color: '#c9c4d8', lineHeight: 22, marginBottom: 12 },
-  bold: { fontWeight: '700', color: '#f4f2f7' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.primary, marginTop: 26, marginBottom: 10 },
+  body: { fontSize: 14, color: colors.onSurfaceVariant, lineHeight: 22, marginBottom: 12 },
+  bold: { fontWeight: '700', color: colors.onSurface },
 
   quoteWrap: { borderLeftWidth: 3, borderLeftColor: colors.primarySolid, paddingLeft: 14, paddingVertical: 4, marginBottom: 14 },
-  quote: { fontSize: 15, fontStyle: 'italic', color: '#e4e1e6', lineHeight: 23 },
+  quote: { fontSize: 15, fontStyle: 'italic', color: colors.onSurface, lineHeight: 23 },
 
-  card: { backgroundColor: 'rgba(31,31,34,0.6)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
+  card: { backgroundColor: surfaces.card, borderRadius: 16, borderWidth: 1, borderColor: surfaces.hairline, overflow: 'hidden' },
   linkRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
-  linkLabel: { fontSize: 15, fontWeight: '600', color: '#e4e1e6' },
+  linkLabel: { fontSize: 15, fontWeight: '600', color: colors.onSurface },
   linkValue: { fontSize: 14, fontWeight: '600', color: colors.secondary },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginLeft: 16 },
+  divider: { height: 1, backgroundColor: surfaces.divider, marginLeft: 16 },
 
-  security: { fontSize: 12, color: '#938ea1', lineHeight: 18, marginTop: 14 },
+  security: { fontSize: 12, color: colors.muted, lineHeight: 18, marginTop: 14 },
 
-  codeBtn: { marginTop: 24, paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: 'rgba(124,92,252,0.12)', borderWidth: 1, borderColor: 'rgba(124,92,252,0.35)' },
-  codeBtnText: { fontSize: 14, fontWeight: '700', color: '#cabeff', letterSpacing: 0.3 },
+  codeBtn: { marginTop: 24, paddingVertical: 14, borderRadius: 14, alignItems: 'center', backgroundColor: surfaces.primaryTint, borderWidth: 1, borderColor: alpha(colors.primarySolid, 0.35) },
+  codeBtnText: { fontSize: 14, fontWeight: '700', color: colors.primary, letterSpacing: 0.3 },
 
   bottomSpacer: { height: 24 },
 });
+
+type Styles = ReturnType<typeof makeStyles>;
 
 interface AboutContent {
   header: string;
   eyebrow: string;
   title: string;
-  intro: React.ReactNode;
+  intro: (styles: Styles) => React.ReactNode;
   s1Title: string;
   s1p1: string;
   quote: string;
@@ -85,16 +89,16 @@ interface AboutContent {
   viewCode: string;
 }
 
-const boldName = (t: string) => <Text style={styles.bold}>{t}</Text>;
+const boldName = (styles: Styles, t: string) => <Text style={styles.bold}>{t}</Text>;
 
 const ES: AboutContent = {
   header: 'Acerca de',
   eyebrow: 'Redder Labs · Independiente · Privacidad por diseño',
   title: 'Detrás de esta app hay una persona, no una corporación.',
-  intro: (
+  intro: (styles) => (
     <Text style={styles.body}>
-      Spider Privacy Browser lo construye {boldName('Julián Rodríguez')}, desarrollador autodidacta,
-      bajo la marca {boldName('Redder Labs')}. Sin inversores, sin equipo de marketing, sin reuniones.
+      Spider Privacy Browser lo construye {boldName(styles, 'Julián Rodríguez')}, desarrollador autodidacta,
+      bajo la marca {boldName(styles, 'Redder Labs')}. Sin inversores, sin equipo de marketing, sin reuniones.
       Solo código y una idea fija: que tus datos no sean el producto.
     </Text>
   ),
@@ -114,10 +118,10 @@ const EN: AboutContent = {
   header: 'About',
   eyebrow: 'Redder Labs · Independent · Privacy by design',
   title: 'Behind this app there is a person, not a corporation.',
-  intro: (
+  intro: (styles) => (
     <Text style={styles.body}>
-      Spider Privacy Browser is built by {boldName('Julián Rodríguez')}, a self-taught developer,
-      under the {boldName('Redder Labs')} brand. No investors, no marketing team, no meetings. Just
+      Spider Privacy Browser is built by {boldName(styles, 'Julián Rodríguez')}, a self-taught developer,
+      under the {boldName(styles, 'Redder Labs')} brand. No investors, no marketing team, no meetings. Just
       code and one fixed idea: that your data is not the product.
     </Text>
   ),
@@ -136,6 +140,11 @@ const EN: AboutContent = {
 export const AboutScreen: React.FC<AboutScreenProps> = ({ onClose, onOpenUrl }) => {
   const lang = useSettingsStore((s) => s.language);
   const c = lang === 'en' ? EN : ES;
+  const { colors, surfaces } = useTheme();
+  const styles = React.useMemo(() => makeStyles(colors, surfaces), [colors, surfaces]);
+  const r = useResponsive();
+  // On tablets, center the reading column instead of stretching edge-to-edge.
+  const contentPad = r.isTablet ? Math.max(20, (r.width - r.contentMaxWidth) / 2) : 20;
 
   // Opens the link in a new in-app hardened tab (this app IS the browser).
   const open = (url: string) => {
@@ -155,7 +164,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onClose, onOpenUrl }) 
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: contentPad }]} showsVerticalScrollIndicator={false}>
         {/* App brand */}
         <View style={styles.brand}>
           <Image source={require('../../logo.png')} style={styles.logo} resizeMode="contain" />
@@ -167,7 +176,7 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onClose, onOpenUrl }) 
 
         <Text style={styles.eyebrow}>{c.eyebrow}</Text>
         <Text style={styles.title}>{c.title}</Text>
-        {c.intro}
+        {c.intro(styles)}
 
         <Text style={styles.sectionTitle}>{c.s1Title}</Text>
         <Text style={styles.body}>{c.s1p1}</Text>

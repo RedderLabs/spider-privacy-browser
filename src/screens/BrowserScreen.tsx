@@ -17,7 +17,8 @@ import { useTabStore } from '../store/tabStore';
 import { useSettingsStore, normalizeDomain, SiteExceptionMode } from '../store/settingsStore';
 import { captureRef } from 'react-native-view-shot';
 import { useT } from '../i18n';
-import { colors } from '../theme/theme';
+import { alpha, type Palette, type Surfaces } from '../theme/theme';
+import { useTheme } from '../theme/ThemeContext';
 import { ShieldCheckIcon, LockIcon, WarnIcon, BackIcon, ForwardIcon, MenuIcon, HomeIcon, TabsIcon, MoreIcon } from '../components/icons';
 import type { WebViewNavigation } from 'react-native-webview';
 
@@ -35,14 +36,14 @@ interface Tab {
 interface BrowserScreenProps {
   activeTab: Tab | null;
   onOpenTabs: () => void;
-  onOpenSettings: () => void;
+  onOpenNetwork: () => void;
   onOpenDrawer: () => void;
 }
 
 export const BrowserScreen: React.FC<BrowserScreenProps> = ({
   activeTab,
   onOpenTabs,
-  onOpenSettings,
+  onOpenNetwork,
   onOpenDrawer,
 }) => {
   const { tabs, updateTab, recordBlocked, addTab } = useTabStore();
@@ -51,6 +52,8 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
   const setSiteException = useSettingsStore((s) => s.setSiteException);
   const toggleSetting = useSettingsStore((s) => s.toggle);
   const t = useT();
+  const { colors, surfaces } = useTheme();
+  const styles = React.useMemo(() => makeStyles(colors, surfaces), [colors, surfaces]);
   const [addressInput, setAddressInput] = useState('');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [showBlocked, setShowBlocked] = useState(false);
@@ -182,7 +185,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
       ) : isEditingAddress ? (
         /* Editing the address (browsing): a top input pill with autofocus */
         <View style={styles.editPill}>
-          <LockIcon size={14} color={colors.secondary} bg="#1b1b1e" />
+          <LockIcon size={14} color={colors.secondary} bg={colors.surfaceCard} />
           <TextInput
             style={styles.editInput}
             value={addressInput}
@@ -223,8 +226,8 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
             </View>
           </TouchableOpacity>
           <View style={styles.topPillRight}>
-            <TouchableOpacity style={styles.pillIconBtn} onPress={onOpenSettings} activeOpacity={0.7}>
-              <LockIcon size={17} color={colors.onSurfaceVariant} bg="#1b1b1e" />
+            <TouchableOpacity style={styles.pillIconBtn} onPress={onOpenDrawer} activeOpacity={0.7}>
+              <LockIcon size={17} color={colors.onSurfaceVariant} bg={colors.surfaceCard} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.pillIconBtn} onPress={() => setShowBlocked(true)} activeOpacity={0.7}>
               <MoreIcon size={20} color={colors.onSurfaceVariant} />
@@ -257,7 +260,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
           />
         ) : (
           <HomeContent
-            onOpenSettings={onOpenSettings}
+            onOpenNetwork={onOpenNetwork}
             onNavigate={(input) => {
               const url = normalizeUrl(input);
               if (activeTab) {
@@ -273,7 +276,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
         {loadError && activeTab && activeTab.url !== 'about:blank' && (
           <View style={styles.errorOverlay}>
             <View style={styles.errorIconWrap}>
-              <WarnIcon size={56} color={colors.warning} bg="#1A1A1F" />
+              <WarnIcon size={56} color={colors.warning} bg={colors.surfaceCard} />
             </View>
             <Text style={styles.errorTitle}>{t('errorTitle')}</Text>
             <Text style={styles.errorSubtitle}>{t('errorSubtitle')}</Text>
@@ -295,7 +298,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
       </View>
 
       {isHome ? (
-        /* Home toolbar (main-screen.png): ‹ › ⌂ [n] ⋮ */
+        /* Home toolbar: ‹ › ⌂ [n]  (the app menu lives in the ☰ drawer, top-left) */
         <View style={styles.toolbar}>
           <TouchableOpacity
             style={styles.toolBtn}
@@ -314,9 +317,6 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolBtn} onPress={captureAndOpenTabs}>
             <TabsIcon size={22} color={colors.muted} count={tabs.length} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.toolBtn} onPress={onOpenSettings}>
-            <MoreIcon size={22} color={colors.muted} />
           </TouchableOpacity>
         </View>
       ) : (
@@ -341,7 +341,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
               setIsEditingAddress(true);
             }}
             activeOpacity={0.7}>
-            <LockIcon size={13} color={colors.secondary} bg="#1b1b1e" />
+            <LockIcon size={13} color={colors.secondary} bg={colors.surfaceCard} />
             <Text style={styles.pillUrlText} numberOfLines={1}>
               {displayDomain(activeTab?.url ?? '')}
             </Text>
@@ -370,7 +370,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
           <View style={[styles.modalSheet, { paddingBottom: 32 + insets.bottom }]}>
             <View style={styles.modalHandle} />
             <View style={styles.modalTitleRow}>
-              <ShieldCheckIcon size={16} color={colors.primary} bg="#1A1A1F" />
+              <ShieldCheckIcon size={16} color={colors.primary} bg={colors.surfaceCard} />
               <Text style={styles.modalTitle}>{trackersBlocked} {t('blockedModalTitle')}</Text>
             </View>
             <Text style={styles.modalSubtitle}>
@@ -412,7 +412,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
           <View style={[styles.modalSheet, { paddingBottom: 32 + insets.bottom }]}>
             <View style={styles.modalHandle} />
             <View style={styles.modalTitleRow}>
-              <ShieldCheckIcon size={16} color={colors.primary} bg="#1A1A1F" />
+              <ShieldCheckIcon size={16} color={colors.primary} bg={colors.surfaceCard} />
               <Text style={styles.modalTitle}>{t('siteSheetTitle')}</Text>
             </View>
             <Text style={styles.modalSubtitle}>{activeDomain}</Text>
@@ -443,8 +443,8 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0D0D0F' },
+const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.bg },
 
   // Home header (main-screen.png): hamburger + shield
   homeHeader: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     marginHorizontal: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: surfaces.hairline,
   },
   toolBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
@@ -481,19 +481,19 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingLeft: 8,
     paddingRight: 6,
-    backgroundColor: 'rgba(27,27,30,0.85)',
+    backgroundColor: alpha(colors.surfaceCard, 0.85),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: surfaces.hairline,
   },
   topPillLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
   shieldChip: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#947dff', alignItems: 'center', justifyContent: 'center' },
   topPillText: { flex: 1 },
-  statusLabel: { color: '#cabeff', fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
+  statusLabel: { color: colors.primary, fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
   pulseRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
-  pulseDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#484555' },
-  pulseDotOn: { backgroundColor: '#00e478' },
-  pulseText: { fontSize: 9, color: '#938ea1', fontWeight: '700', letterSpacing: 1 },
-  pulseTextOn: { color: '#00e478' },
+  pulseDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.outline },
+  pulseDotOn: { backgroundColor: colors.tertiary },
+  pulseText: { fontSize: 9, color: colors.muted, fontWeight: '700', letterSpacing: 1 },
+  pulseTextOn: { color: colors.tertiary },
   topPillRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   pillIconBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
 
@@ -507,11 +507,11 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 999,
     paddingHorizontal: 18,
-    backgroundColor: 'rgba(31,31,34,0.95)',
+    backgroundColor: alpha(colors.surfaceContainer, 0.95),
     borderWidth: 1,
-    borderColor: 'rgba(0,210,253,0.4)',
+    borderColor: alpha(colors.secondary, 0.4),
   },
-  editInput: { flex: 1, color: '#e4e1e6', fontSize: 15, fontWeight: '500', padding: 0 },
+  editInput: { flex: 1, color: colors.onSurface, fontSize: 15, fontWeight: '500', padding: 0 },
 
   // Browsing bottom pill: ‹ › [URL] [n] +
   bottomPill: {
@@ -522,13 +522,13 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 999,
     paddingHorizontal: 6,
-    backgroundColor: 'rgba(42,42,45,0.92)',
+    backgroundColor: alpha(colors.surfaceHigh, 0.92),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: surfaces.hairline,
   },
   pillNavBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   pillUrl: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 8 },
-  pillUrlText: { color: '#e4e1e6', fontSize: 13, fontWeight: '500', flexShrink: 1 },
+  pillUrlText: { color: colors.onSurface, fontSize: 13, fontWeight: '500', flexShrink: 1 },
   pillAdd: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#cabeff', alignItems: 'center', justifyContent: 'center', marginLeft: 2 },
   pillAddText: { color: '#32009a', fontSize: 24, fontWeight: '700', lineHeight: 26 },
 
@@ -540,35 +540,35 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#1A1A1F',
+    backgroundColor: colors.surfaceCard,
   },
   // Load-error overlay (covers the WebView)
   errorOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#1A1A1F',
+    backgroundColor: colors.surfaceCard,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
   errorIconWrap: { marginBottom: 16, opacity: 0.9 },
-  errorTitle: { fontSize: 20, fontWeight: '700', color: '#e4e1e6', marginBottom: 8, textAlign: 'center' },
-  errorSubtitle: { fontSize: 14, color: '#938ea1', textAlign: 'center', lineHeight: 20, marginBottom: 6 },
-  errorDetail: { fontSize: 12, color: '#6f6a7d', marginBottom: 24, letterSpacing: 0.3 },
+  errorTitle: { fontSize: 20, fontWeight: '700', color: colors.onSurface, marginBottom: 8, textAlign: 'center' },
+  errorSubtitle: { fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, marginBottom: 6 },
+  errorDetail: { fontSize: 12, color: colors.faint, marginBottom: 24, letterSpacing: 0.3 },
   errorBtn: {
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: 99,
-    backgroundColor: 'rgba(124,92,252,0.15)',
+    backgroundColor: alpha(colors.primarySolid, 0.15),
     borderWidth: 1,
-    borderColor: 'rgba(124,92,252,0.4)',
+    borderColor: surfaces.primaryBorder,
   },
-  errorBtnText: { color: '#cabeff', fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+  errorBtnText: { color: colors.primary, fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
 
   // Blocked-trackers modal
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalDismiss: { flex: 1 },
   modalSheet: {
-    backgroundColor: '#1A1A1F',
+    backgroundColor: colors.surfaceCard,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -576,13 +576,13 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     maxHeight: '70%',
     borderTopWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: surfaces.hairline,
   },
-  modalHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)', marginBottom: 16 },
+  modalHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.outline, marginBottom: 16 },
   modalTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#cabeff' },
-  modalSubtitle: { fontSize: 13, color: '#938ea1', marginBottom: 16 },
-  modalEmpty: { fontSize: 14, color: '#938ea1', paddingVertical: 24, textAlign: 'center' },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.primary },
+  modalSubtitle: { fontSize: 13, color: colors.muted, marginBottom: 16 },
+  modalEmpty: { fontSize: 14, color: colors.muted, paddingVertical: 24, textAlign: 'center' },
   modalList: { marginTop: 4 },
   modalRow: {
     flexDirection: 'row',
@@ -590,11 +590,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: surfaces.divider,
   },
-  modalDomain: { flex: 1, fontSize: 14, color: '#e4e1e6', marginRight: 12 },
-  modalCountPill: { minWidth: 28, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: 'rgba(124,92,252,0.15)', alignItems: 'center' },
-  modalCount: { fontSize: 13, fontWeight: '700', color: '#cabeff' },
+  modalDomain: { flex: 1, fontSize: 14, color: colors.onSurface, marginRight: 12 },
+  modalCountPill: { minWidth: 28, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 99, backgroundColor: alpha(colors.primarySolid, 0.15), alignItems: 'center' },
+  modalCount: { fontSize: 13, fontWeight: '700', color: colors.primary },
 
   // Per-site privacy sheet
   siteOpt: {
@@ -603,16 +603,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: surfaces.divider,
   },
   siteOptText: { flex: 1, marginRight: 12 },
-  siteOptTitle: { fontSize: 15, fontWeight: '600', color: '#e4e1e6', marginBottom: 2 },
-  siteOptSub: { fontSize: 12, color: '#938ea1', lineHeight: 16 },
+  siteOptTitle: { fontSize: 15, fontWeight: '600', color: colors.onSurface, marginBottom: 2 },
+  siteOptSub: { fontSize: 12, color: colors.muted, lineHeight: 16 },
   radio: {
     width: 22, height: 22, borderRadius: 11,
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 2, borderColor: colors.outline,
     alignItems: 'center', justifyContent: 'center',
   },
-  radioOn: { borderColor: '#7c5cfc' },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#7c5cfc' },
+  radioOn: { borderColor: colors.primarySolid },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primarySolid },
 });

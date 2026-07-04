@@ -30,6 +30,10 @@ export type PrivacyLevel = 'balanced' | 'strict' | 'custom';
 // wins over the global master shield.
 export type SiteExceptionMode = 'off' | 'strict';
 
+// Appearance: follow the OS ('system'), or force one. Persisted alongside the
+// language — the two user preferences that survive an app close (see partialize).
+export type ThemeMode = 'system' | 'light' | 'dark';
+
 type Toggles = Pick<SettingsState, BooleanKeys>;
 
 // Normalize a URL or bare hostname to a registrable-ish host key (lowercased,
@@ -90,6 +94,7 @@ interface SettingsState {
   blockCookies: boolean;
   noHistory: boolean;
   language: Language;
+  themeMode: ThemeMode;
   privacyLevel: PrivacyLevel;
   // Per-domain hardening overrides (Task 9). Keyed by normalizeDomain().
   siteExceptions: Record<string, SiteExceptionMode>;
@@ -97,6 +102,7 @@ interface SettingsState {
   setDohProvider: (id: string) => void;
   setNetworkMode: (mode: NetworkModeId) => void;
   setLanguage: (lang: Language) => void;
+  setThemeMode: (mode: ThemeMode) => void;
   setPrivacyLevel: (level: 'balanced' | 'strict') => void;
   // Set (or, with null, clear) the override for a domain.
   setSiteException: (domain: string, mode: SiteExceptionMode | null) => void;
@@ -161,6 +167,7 @@ export const useSettingsStore = create<SettingsState>()(
       dohProvider: DEFAULT_DOH_PROVIDER_ID,
       networkMode: 'none',
       language: 'es',
+      themeMode: 'system' as ThemeMode,
       // Default to the balanced profile: fewer broken sites out of the box.
       ...PRESETS.balanced,
       privacyLevel: 'balanced' as PrivacyLevel,
@@ -170,6 +177,7 @@ export const useSettingsStore = create<SettingsState>()(
       setDohProvider: (id) => set({ dohProvider: id }),
       setNetworkMode: (mode) => set({ networkMode: mode }),
       setLanguage: (lang) => set({ language: lang }),
+      setThemeMode: (mode) => set({ themeMode: mode }),
       setPrivacyLevel: (level) => set({ ...PRESETS[level], privacyLevel: level }),
       setSiteException: (domain, mode) => set((s) => {
         const key = normalizeDomain(domain);
@@ -185,12 +193,14 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'spider-settings',
       storage: createJSONStorage(() => AsyncStorage),
-      // Incognito-pure model: the ONLY thing that survives an app close/kill is
-      // the language. Everything else — privacy toggles, profile, DoH provider,
-      // per-site exceptions, tabs — resets to defaults on each launch, so no
-      // browsing state lingers. (networkMode was never persisted either.)
+      // Incognito-pure model: the only things that survive an app close/kill are
+      // the two non-sensitive UI preferences — language and theme. Everything
+      // else — privacy toggles, profile, DoH provider, per-site exceptions,
+      // tabs — resets to defaults on each launch, so no browsing state lingers.
+      // (networkMode was never persisted either.)
       partialize: (s) => ({
         language: s.language,
+        themeMode: s.themeMode,
       }),
     },
   ),

@@ -19,7 +19,8 @@ export const alpha = (hex: string, a: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 };
 
-export const colors = {
+// --- Dark palette (Obsidian Stealth, the original/default) -------------------
+export const darkColors = {
   // Surfaces (tonal layering / elevation)
   bg: '#0D0D0F', // Level 0 — the infinite canvas (app background)
   surface: '#131316',
@@ -54,8 +55,45 @@ export const colors = {
   white: '#FFFFFF',
 } as const;
 
+// --- Light palette -----------------------------------------------------------
+// Same token shape as dark. Surface/text tokens invert to a soft off-white
+// scheme; the brand accents (violet/cyan/emerald) are *darkened* where they'd
+// otherwise fail contrast on white. `white` stays white (it's the label colour
+// on the violet fills, which are the same in both themes).
+export const lightColors: Palette = {
+  bg: '#F4F3F8', // soft off-white with a faint violet tint
+  surface: '#FFFFFF',
+  surfaceCard: '#FFFFFF',
+  surfaceContainer: '#ECEAF2',
+  surfaceHigh: '#FFFFFF', // modals are white, elevated via shadow
+
+  onSurface: '#1A1820', // near-black primary text
+  onSurfaceVariant: '#3B3746',
+  muted: '#6B6676', // secondary text, inactive icons
+  faint: '#9A94A6',
+
+  primary: '#6A4CE0', // darker violet so tinted text/icons read on white
+  primarySolid: '#7C5CFC', // fills keep the brand violet (white label on top)
+  primaryBright: '#6A4CE0',
+
+  secondary: '#0090C4', // darkened cyan for contrast on light
+  secondaryText: '#0A7096',
+
+  tertiary: '#00A65A', // darkened emerald for contrast on light
+
+  warning: '#9A6B00',
+  error: '#C43A2C',
+
+  outline: '#D6D3E0',
+  white: '#FFFFFF',
+} as const;
+
+// Back-compat alias: unmigrated modules still `import { colors }` and get dark.
+// New/edited code should read the active palette from `useTheme()`.
+export const colors = darkColors;
+
 /** Common translucent fills, derived so callers don't re-type rgba() by hand. */
-export const surfaces = {
+export const darkSurfaces = {
   card: alpha('#1F1F22', 0.6), // standard card background over bg
   hairline: alpha('#FFFFFF', 0.08), // 1px card borders
   divider: alpha('#FFFFFF', 0.05),
@@ -65,6 +103,25 @@ export const surfaces = {
   emeraldTint: alpha('#00E478', 0.1),
   glass: alpha('#0D0D0F', 0.4), // top-bar / chrome overlay
 } as const;
+
+export const lightSurfaces: Surfaces = {
+  card: alpha('#FFFFFF', 0.9), // near-solid white card over the off-white bg
+  hairline: alpha('#000000', 0.08), // dark hairline on light
+  divider: alpha('#000000', 0.06),
+  primaryTint: alpha('#7C5CFC', 0.12), // same subtle violet wash reads on light
+  primaryBorder: alpha('#7C5CFC', 0.4),
+  cyanTint: alpha('#0090C4', 0.12),
+  emeraldTint: alpha('#00A65A', 0.12),
+  glass: alpha('#F4F3F8', 0.7), // light chrome overlay
+} as const;
+
+export const surfaces = darkSurfaces;
+
+/** A resolved palette + its translucent fills, as handed out by `useTheme()`.
+ *  Values are widened to `string` so the light palette (different hex literals)
+ *  satisfies the same type as the dark one. */
+export type Palette = { readonly [K in keyof typeof darkColors]: string };
+export type Surfaces = { readonly [K in keyof typeof darkSurfaces]: string };
 
 /** Corner radii. Inputs 12 · cards 16 · nav & sheets 24 · buttons pill. */
 export const radius = {

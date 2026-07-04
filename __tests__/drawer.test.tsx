@@ -18,6 +18,7 @@ describe('Drawer', () => {
     const onOpenTabs = jest.fn();
     const onOpenSettings = jest.fn();
     const onOpenAbout = jest.fn();
+    const onOpenNetwork = jest.fn();
 
     render(
       <Drawer
@@ -27,6 +28,7 @@ describe('Drawer', () => {
         onOpenTabs={onOpenTabs}
         onOpenSettings={onOpenSettings}
         onOpenAbout={onOpenAbout}
+        onOpenNetwork={onOpenNetwork}
       />,
     );
 

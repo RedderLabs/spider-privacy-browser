@@ -24,12 +24,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../i18n';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTabStore } from '../store/tabStore';
-import { colors } from '../theme/theme';
+import { alpha, type Palette, type Surfaces } from '../theme/theme';
+import { useTheme } from '../theme/ThemeContext';
 import { APP_VERSION } from '../version';
 import { ShieldCheckIcon, SettingsIcon, OnionIcon, TabsIcon, GlobeIcon, InfoIcon } from './icons';
 
 const WIDTH = Math.min(320, Dimensions.get('window').width * 0.82);
-const PANEL_BG = '#141018';
 
 interface DrawerProps {
   visible: boolean;
@@ -37,14 +37,17 @@ interface DrawerProps {
   onOpenSettings: () => void;
   onOpenTabs: () => void;
   onOpenAbout: () => void;
+  onOpenNetwork: () => void;
   onNewTab: () => void;
 }
 
-export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings, onOpenTabs, onOpenAbout, onNewTab }) => {
+export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings, onOpenTabs, onOpenAbout, onOpenNetwork, onNewTab }) => {
   const t = useT();
   const settings = useSettingsStore();
   const tabCount = useTabStore((s) => s.tabs.length);
   const insets = useSafeAreaInsets();
+  const { colors, surfaces } = useTheme();
+  const styles = React.useMemo(() => makeStyles(colors, surfaces), [colors, surfaces]);
 
   // Keep the Modal mounted through the slide-out animation.
   const [mounted, setMounted] = useState(visible);
@@ -119,7 +122,7 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
 
           <TouchableOpacity style={styles.item} activeOpacity={0.7} onPress={onOpenSettings}>
             <View style={styles.itemIcon}>
-              <SettingsIcon size={20} color={colors.onSurfaceVariant} bg={PANEL_BG} />
+              <SettingsIcon size={20} color={colors.onSurfaceVariant} bg={colors.surface} />
             </View>
             <Text style={styles.itemText}>{t('settingsTitle')}</Text>
             <Text style={styles.chev}>›</Text>
@@ -127,7 +130,7 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
 
           <TouchableOpacity style={styles.item} activeOpacity={0.7} onPress={onOpenAbout}>
             <View style={styles.itemIcon}>
-              <InfoIcon size={20} color={colors.onSurfaceVariant} bg={PANEL_BG} />
+              <InfoIcon size={20} color={colors.onSurfaceVariant} bg={colors.surface} />
             </View>
             <Text style={styles.itemText}>{t('aboutTitle')}</Text>
             <Text style={styles.chev}>›</Text>
@@ -138,19 +141,19 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
           <View style={styles.card}>
             <View style={styles.cardRow}>
               <View style={styles.itemIcon}>
-                <ShieldCheckIcon size={20} color={colors.primary} bg={PANEL_BG} />
+                <ShieldCheckIcon size={20} color={colors.primary} bg={colors.surface} />
               </View>
               <Text style={styles.cardRowText}>{t('drawerTrackerBlocker')}</Text>
               <Switch
                 value={settings.hardeningEnabled}
                 onValueChange={() => settings.toggle('hardeningEnabled')}
-                trackColor={{ false: 'rgba(255,255,255,0.1)', true: colors.primarySolid }}
-                thumbColor={settings.hardeningEnabled ? '#fff' : colors.muted}
-                ios_backgroundColor="rgba(255,255,255,0.1)"
+                trackColor={{ false: alpha(colors.white, 0.1), true: colors.primarySolid }}
+                thumbColor={settings.hardeningEnabled ? colors.white : colors.muted}
+                ios_backgroundColor={alpha(colors.white, 0.1)}
               />
             </View>
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.cardRow} activeOpacity={0.7} onPress={onOpenSettings}>
+            <TouchableOpacity style={styles.cardRow} activeOpacity={0.7} onPress={onOpenNetwork}>
               <View style={styles.itemIcon}>
                 {isPrivate ? (
                   <OnionIcon size={20} color={colors.secondary} />
@@ -191,22 +194,22 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
   root: { flex: 1, flexDirection: 'row' },
   panel: {
     height: '100%',
-    backgroundColor: PANEL_BG,
+    backgroundColor: colors.surface,
     borderRightWidth: 1,
-    borderRightColor: 'rgba(255,255,255,0.08)',
+    borderRightColor: surfaces.hairline,
     paddingTop: 52,
     paddingHorizontal: 20,
   },
   backdropWrap: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
 
-  brand: { alignItems: 'flex-start', paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
+  brand: { alignItems: 'flex-start', paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: surfaces.divider },
   logo: { width: 76, height: 66, marginBottom: 8, marginLeft: -6 },
-  wordmark: { fontSize: 20, fontWeight: '800', color: '#f4f2f7' },
+  wordmark: { fontSize: 20, fontWeight: '800', color: colors.onSurface },
   wordmarkAccent: { color: colors.primaryBright },
   tagline: { fontSize: 12, color: colors.muted, marginTop: 4 },
 
@@ -218,10 +221,10 @@ const styles = StyleSheet.create({
 
   sectionLabel: { fontSize: 11, fontWeight: '600', color: colors.muted, letterSpacing: 1.5, marginTop: 16, marginBottom: 8 },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: alpha(colors.white, 0.03),
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: surfaces.hairline,
     overflow: 'hidden',
   },
   cardRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12 },
@@ -230,7 +233,7 @@ const styles = StyleSheet.create({
   cardRowTitle: { fontSize: 15, fontWeight: '600', color: colors.onSurface },
   cardRowSub: { fontSize: 12, color: colors.muted, marginTop: 1 },
   cardRowSubOn: { color: colors.secondary },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginLeft: 52 },
+  divider: { height: 1, backgroundColor: surfaces.divider, marginLeft: 52 },
 
   scoreRow: {
     flexDirection: 'row',
@@ -240,9 +243,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 16,
     borderRadius: 16,
-    backgroundColor: 'rgba(124,92,252,0.08)',
+    backgroundColor: alpha(colors.primarySolid, 0.08),
     borderWidth: 1,
-    borderColor: 'rgba(124,92,252,0.2)',
+    borderColor: alpha(colors.primarySolid, 0.2),
   },
   scoreLabel: { fontSize: 13, fontWeight: '600', color: colors.onSurfaceVariant },
   scoreStrength: { fontSize: 11, color: colors.muted, marginTop: 2 },
@@ -250,5 +253,5 @@ const styles = StyleSheet.create({
 
   footer: { marginTop: 'auto', paddingBottom: 28 },
   footerText: { fontSize: 11, color: colors.faint, lineHeight: 16 },
-  version: { fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 8 },
+  version: { fontSize: 10, color: alpha(colors.white, 0.2), marginTop: 8 },
 });

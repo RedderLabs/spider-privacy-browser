@@ -171,7 +171,7 @@ Objetivo: hacer real la sección "Red privada" (hoy un selector `Directa / Orbot
 - [x] ~~Sin manejo de errores de carga en el WebView~~ → **hecho**: `HardenedWebView` emite `onLoadError` (`onError`/`onHttpError`) + `onLoadStart`; `BrowserScreen` muestra un overlay temático con botón Reintentar.
 - [x] ~~Tab previews son iconos, no thumbnails reales~~ → **hecho**: `react-native-view-shot` captura la página al abrir el switcher (`captureAndOpenTabs` en `BrowserScreen`); en Android se voltea `androidLayerType` a `software` un instante para que el WebView no salga en blanco. La imagen (`preview` data-uri) vive **en memoria** en `tabStore` (NO persistida — no se escriben snapshots a disco). `TabsScreen` la muestra con fallback al icono. Requiere rebuild nativo (`npm run android`); si la captura falla en algún dispositivo, cae al icono sin romper.
 - [x] ~~Sin gestión del back físico de Android~~ → **hecho**: `BackHandler` en `App.tsx` (cierra Settings/Tabs) y en `BrowserScreen` (cierra modales → navega atrás en la web → sale).
-- [ ] Tokens de diseño de `DESIGN.md` no se usan; colores hardcodeados repetidos en cada `StyleSheet` → extraer a un `theme.ts` (candidato a `@spider/ui`).
+- [x] ~~Tokens de diseño hardcodeados en cada `StyleSheet`~~ → **HECHO**: paleta única en `src/theme/theme.ts` (`darkColors`/`lightColors` + surfaces), consumida vía `useTheme()` (`ThemeContext`). **Tema claro/oscuro** con selector Sistema/Claro/Oscuro en Ajustes (`themeMode` persistido junto al idioma). Las pantallas construyen su `StyleSheet` con `makeStyles(colors, surfaces)`. (Pendiente menor: extraer a `@spider/ui` cuando se monte el monorepo de UI.)
 
 ---
 
