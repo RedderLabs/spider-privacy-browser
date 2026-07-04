@@ -85,3 +85,13 @@ keystore.properties
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+
+# Local scratch dropped at the repo root (loose notes / screenshots). Scoped to
+# the root with a leading slash so F-Droid/Play metadata under fastlane/ — its
+# PNG screenshots and .txt changelogs — stays tracked.
+/*.txt
+/*.png
+
+# Kotlin incremental-compile cache
+android/.kotlin/
