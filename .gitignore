@@ -95,3 +95,5 @@ keystore.properties
 
 # Kotlin incremental-compile cache
 android/.kotlin/
+# Guia interna del asistente (se mantiene local, fuera del repo publico)
+CLAUDE.md
