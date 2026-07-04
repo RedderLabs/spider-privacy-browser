@@ -1,7 +1,7 @@
 # ROADMAP — Spider Privacy Browser
 
 > Plan de fases para avanzar el proyecto, basado en el **estado real del código** (no en lo aspiracional).
-> Analizado el 2026-07-01. Complementa `privacy-browser-mobile.md` (visión) y `CLAUDE.md` (arquitectura).
+> Analizado el 2026-07-01. Complementa `privacy-browser-mobile.md` (visión).
 
 Leyenda: `[x]` hecho · `[~]` parcial / solo maqueta · `[ ]` pendiente
 
