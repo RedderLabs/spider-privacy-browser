@@ -50,7 +50,7 @@ Pendientes inmediatos, por prioridad:
 2. ~~**Task 9 — Excepciones por sitio**~~ → **HECHO**: `siteExceptions` (`off`/`strict`) en `settingsStore`, `resolveHardening()` con precedencia sobre el master, hoja por-sitio al tocar el badge de escudo, persistido. Verificar UX en dispositivo.
 3. ~~**DoH VPN v2**: notificación foreground, TCP-DNS, IPv6~~ → **HECHO** (falta solo `reconexión al cambiar de red` y verificar en dispositivo).
 4. **Fase 2 — bloqueo nativo de peticiones** (`shouldInterceptRequest`/`WKContentRuleList`): el salto real de cobertura de trackers (JS tiene techo). react-native-webview no lo expone → puente nativo o GeckoView (Fase 4).
-5. **Auditabilidad** (pediste): crear `LICENSE`, `SECURITY.md` (threat model honesto), `AUDIT.md` (cómo verificar).
+5. ~~**Auditabilidad** (pediste): crear `LICENSE`, `SECURITY.md` (threat model honesto), `AUDIT.md` (cómo verificar).~~ → **HECHO**: `LICENSE` (AGPL-3.0), `SECURITY.md` con modelo de amenaza (qué protege / qué NO / supuestos), y `docs/AUDIT.md` (cómo verificar cada afirmación con comandos).
 
 > Nota de sesión: el error `RNGetRandomValues` se resolvió eliminando `react-native-get-random-values` (incompatible con RN 0.76/New Arch); `uuid.ts` usa `crypto.getRandomValues` con fallback. El emulador Pixel_7 se colgó en `authorizing`; se arregla con cold boot (`emulator -avd Pixel_7 -no-snapshot-load`).
 
