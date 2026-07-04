@@ -103,9 +103,9 @@ Objetivo: que **todo lo que se ve en la UI haga algo real**, incluyendo la resol
 
 Objetivo: pasar del `onShouldStartLoadWithRequest` (que solo intercepta navegaciones top-level, no subrecursos) a bloqueo real de peticiones.
 
-- [ ] **iOS — `WKContentRuleList`**: crear `ios/.../ContentRules.swift`, empaquetar reglas JSON (nuevo `packages/content-blocking/`) y compilarlas con `WKContentRuleListStore`. Requiere puente nativo para exponerlo a RN.
-- [x] **Android — interceptación de recursos**: `shouldInterceptRequest` en el `RNCWebViewClient` (patch-package sobre `react-native-webview`) que consulta al módulo nativo `NativeBlocklist`. Bloquea subrecursos de hosts rastreadores antes de que salgan a la red; la lista viene de `@spider/network` (fuente única) y sigue el master shield.
-- [ ] **Filter lists**: pipeline para convertir EasyList/AdGuard al formato `WKContentRuleList`. Documentar cómo se actualizan.
+- [x] **iOS — `WKContentRuleList`**: `SpiderContentRuleStore` (dentro del pod de `react-native-webview`, vía patch-package) compila las reglas JSON con `WKContentRuleListStore` y las instala en cada `WKWebView`; el módulo RN `ios/.../SpiderContentBlocker.m` lo alimenta desde JS. **Code-complete pero sin verificar** (requiere build en macOS/Xcode; falta añadir `SpiderContentBlocker.m` al target del `.xcodeproj`). Ver `docs/CONTENT_BLOCKING.md`.
+- [x] **Android — interceptación de recursos**: `shouldInterceptRequest` en el `RNCWebViewClient` (patch-package sobre `react-native-webview`) que consulta al módulo nativo `NativeBlocklist`. Bloquea subrecursos de hosts rastreadores antes de que salgan a la red; la lista viene del pipeline `@spider/content-blocking` y sigue el master shield. Verificado en emulador.
+- [x] **Filter lists**: pipeline `@spider/content-blocking` que convierte sintaxis EasyList/AdGuard a (a) host list para Android/JS y (b) `WKContentRuleList` JSON para iOS. Fuente editable en `spiderFilters.ts`; cómo actualizar desde upstream en `docs/CONTENT_BLOCKING.md`.
 - [x] **Conectar el contador real** (Fase 1) a estos bloqueos nativos: cada bloqueo nativo emite `spiderNativeBlocked` y `BrowserScreen` lo atribuye al contador de la pestaña activa.
 
 ---

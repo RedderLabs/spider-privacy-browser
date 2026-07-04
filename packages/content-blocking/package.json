@@ -1,0 +1,8 @@
+{
+  "name": "@spider/content-blocking",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Filter-list pipeline: EasyList/AdGuard -> host list (Android) + WKContentRuleList (iOS).",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

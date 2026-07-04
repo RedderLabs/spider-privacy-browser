@@ -10,8 +10,9 @@ import {Drawer} from './src/components/Drawer';
 import {NetworkSheet} from './src/components/NetworkSheet';
 import {ThemeProvider, useTheme} from './src/theme/ThemeContext';
 import {useSettingsStore} from './src/store/settingsStore';
-import {TRACKER_DOMAINS} from '@spider/network';
+import {BLOCKED_HOSTS, WK_CONTENT_RULES_JSON} from '@spider/content-blocking';
 import {nativeBlocklist} from './src/native/nativeBlocklist';
+import {iosContentBlocker} from './src/native/iosContentBlocker';
 import {FEATURES} from './src/config/env';
 
 function App(): React.JSX.Element {
@@ -36,14 +37,19 @@ function AppInner(): React.JSX.Element {
   const [showNetwork, setShowNetwork] = React.useState(false);
   const hardeningEnabled = useSettingsStore(s => s.hardeningEnabled);
 
-  // Native subresource blocker (Android): feed it the tracker list once, then keep
-  // it toggled with the master shield. It blocks tracker hosts before they reach
-  // the network — the in-page JS blocker only sees fetch/XHR/sendBeacon.
+  // Native content blocking, fed once at startup from the @spider/content-blocking
+  // pipeline (EasyList/AdGuard + curated seed) and toggled with the master shield.
+  // Android blocks tracker hosts in shouldInterceptRequest; iOS compiles a
+  // WKContentRuleList. Both catch subresources the in-page JS blocker can't
+  // (it only sees fetch/XHR/sendBeacon).
   React.useEffect(() => {
-    nativeBlocklist.setDomains(TRACKER_DOMAINS);
+    nativeBlocklist.setDomains(BLOCKED_HOSTS); // Android host list
+    iosContentBlocker.setRules(WK_CONTENT_RULES_JSON); // iOS WKContentRuleList
   }, []);
   React.useEffect(() => {
-    nativeBlocklist.setEnabled(FEATURES.contentBlocking && hardeningEnabled);
+    const on = FEATURES.contentBlocking && hardeningEnabled;
+    nativeBlocklist.setEnabled(on);
+    iosContentBlocker.setEnabled(on);
   }, [hardeningEnabled]);
 
   // No auto-created tab: the app can hold zero tabs (e.g. after "close all").

@@ -39,3 +39,169 @@ index 0287e1c..ee68541 100644
      @Override
      public boolean shouldOverrideUrlLoading(WebView view, String url) {
          final RNCWebView rncWebView = (RNCWebView) view;
+diff --git a/node_modules/react-native-webview/apple/RNCWebViewImpl.m b/node_modules/react-native-webview/apple/RNCWebViewImpl.m
+index 3890426..77ca1d7 100644
+--- a/node_modules/react-native-webview/apple/RNCWebViewImpl.m
++++ b/node_modules/react-native-webview/apple/RNCWebViewImpl.m
+@@ -9,6 +9,7 @@
+ #import <React/RCTConvert.h>
+ #import <React/RCTAutoInsetsProtocol.h>
+ #import "RNCWKProcessPoolManager.h"
++#import "SpiderContentRuleStore.h"
+ #if !TARGET_OS_OSX
+ #import <UIKit/UIKit.h>
+ #else
+@@ -469,6 +470,12 @@ RCTAutoInsetsProtocol>
+   }
+   wkWebViewConfig.userContentController = [WKUserContentController new];
+ 
++  // Spider Privacy Browser: register this web view with the native content
++  // blocker so a compiled WKContentRuleList is installed now (or when it finishes
++  // compiling) and follows the master shield. Decoupled from app classes — the
++  // store lives in this pod and the app drives it via NSClassFromString.
++  [SpiderContentRuleStore registerContentController:wkWebViewConfig.userContentController];
++
+ #if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000 /* iOS 13 */
+   if (@available(iOS 13.0, *)) {
+     WKWebpagePreferences *pagePrefs = [[WKWebpagePreferences alloc]init];
+diff --git a/node_modules/react-native-webview/apple/SpiderContentRuleStore.h b/node_modules/react-native-webview/apple/SpiderContentRuleStore.h
+new file mode 100644
+index 0000000..45efc49
+--- /dev/null
++++ b/node_modules/react-native-webview/apple/SpiderContentRuleStore.h
+@@ -0,0 +1,31 @@
++/*
++ * Spider Privacy Browser — native Safari content blocking (iOS).
++ *
++ * This class lives INSIDE the react-native-webview pod so the patched
++ * RNCWebViewImpl can register each web view's WKUserContentController with it
++ * (a pod-local #import). The app's SpiderContentBlocker RN module drives it from
++ * JS — it reaches this class by name (NSClassFromString) so no cross-module
++ * header import is needed. Dependency direction stays app -> library.
++ *
++ * The store compiles a WKContentRuleList from JSON (WKContentRuleListStore) and
++ * installs/removes it on every live web view as the master shield toggles.
++ */
++#import <Foundation/Foundation.h>
++#import <WebKit/WebKit.h>
++
++NS_ASSUME_NONNULL_BEGIN
++
++@interface SpiderContentRuleStore : NSObject
++
++/** Called by the patched RNCWebViewImpl for every web view it creates. */
+++ (void)registerContentController:(WKUserContentController *)controller;
++
++/** Compile and cache the WKContentRuleList JSON; re-applies if enabled. */
+++ (void)setRulesJSON:(NSString *)json;
++
++/** Turn content blocking on/off across all live web views. */
+++ (void)setEnabled:(BOOL)enabled;
++
++@end
++
++NS_ASSUME_NONNULL_END
+diff --git a/node_modules/react-native-webview/apple/SpiderContentRuleStore.m b/node_modules/react-native-webview/apple/SpiderContentRuleStore.m
+new file mode 100644
+index 0000000..695c8cb
+--- /dev/null
++++ b/node_modules/react-native-webview/apple/SpiderContentRuleStore.m
+@@ -0,0 +1,98 @@
++/*
++ * Spider Privacy Browser — native Safari content blocking (iOS). See the header.
++ *
++ * All state is touched on the main thread only: WKUserContentController mutation
++ * and WKContentRuleListStore callbacks are main-thread APIs, so every public
++ * method funnels its work through the main queue. Web views are held weakly so a
++ * closed tab doesn't leak.
++ */
++#import "SpiderContentRuleStore.h"
++
++static NSString *const kSpiderRuleListIdentifier = @"SpiderContentBlocker";
++
++@implementation SpiderContentRuleStore
++
++// Weak set of every live web view's user-content controller.
++static NSHashTable<WKUserContentController *> *sControllers = nil;
++// The compiled rule list (nil until JSON is compiled successfully).
++static WKContentRuleList *sCompiled = nil;
++// Whether the master shield currently wants blocking on.
++static BOOL sEnabled = NO;
++
+++ (void)initialize {
++  if (self == [SpiderContentRuleStore class]) {
++    sControllers = [NSHashTable weakObjectsHashTable];
++  }
++}
++
+++ (void)onMain:(dispatch_block_t)block {
++  if ([NSThread isMainThread]) {
++    block();
++  } else {
++    dispatch_async(dispatch_get_main_queue(), block);
++  }
++}
++
+++ (void)registerContentController:(WKUserContentController *)controller {
++  if (controller == nil) {
++    return;
++  }
++  [self onMain:^{
++    [sControllers addObject:controller];
++    if (sEnabled && sCompiled != nil) {
++      [controller addContentRuleList:sCompiled];
++    }
++  }];
++}
++
+++ (void)setRulesJSON:(NSString *)json {
++  if (json.length == 0) {
++    return;
++  }
++  [self onMain:^{
++    WKContentRuleListStore *store = [WKContentRuleListStore defaultStore];
++    [store compileContentRuleListForIdentifier:kSpiderRuleListIdentifier
++                        encodedContentRuleList:json
++                             completionHandler:^(WKContentRuleList *list, NSError *error) {
++      // The completion handler is delivered on the main queue.
++      if (error != nil || list == nil) {
++        // Best-effort: leave any previously compiled list in place.
++        return;
++      }
++      sCompiled = list;
++      if (sEnabled) {
++        [self applyToAll];
++      }
++    }];
++  }];
++}
++
+++ (void)setEnabled:(BOOL)enabled {
++  [self onMain:^{
++    sEnabled = enabled;
++    if (enabled) {
++      [self applyToAll];
++    } else {
++      [self removeFromAll];
++    }
++  }];
++}
++
++// --- main-thread helpers (callers already dispatched to main) ---
++
+++ (void)applyToAll {
++  if (sCompiled == nil) {
++    return;
++  }
++  for (WKUserContentController *c in sControllers) {
++    [c addContentRuleList:sCompiled];
++  }
++}
++
+++ (void)removeFromAll {
++  for (WKUserContentController *c in sControllers) {
++    [c removeAllContentRuleLists];
++  }
++}
++
++@end

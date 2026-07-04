@@ -3,7 +3,8 @@
   "compilerOptions": {
     "paths": {
       "@spider/privacy-js": ["./packages/privacy-js/src"],
-      "@spider/network": ["./packages/network/src"]
+      "@spider/network": ["./packages/network/src"],
+      "@spider/content-blocking": ["./packages/content-blocking/src"]
     }
   }
 }
