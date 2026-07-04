@@ -25,8 +25,8 @@ La app **funciona como shell de navegación** con hardening JS real, pero varias
 | Autoconsent cookies | `[x]` | Reescrito seguro: solo rechazos reales por ID + ocultar banner; NO clica pago/suscripción/guardar-por-defecto |
 | Coherencia anti-fingerprint | `[x]` | UA↔navigator coherentes (perfil Android, `USER_AGENT` única fuente); canvas noise estable por-sesión |
 | i18n (ES/EN) | `[x]` | `src/i18n` (`useT` + translations), selector en Settings, persistido; todas las pantallas traducidas |
-| DNS cifrado (Private DNS/DoT) | `[x]` (A) | Módulo nativo `PrivateDns`: estado real + abrir Ajustes + copiar host DoT al portapapeles |
-| DNS cifrado (DoH in-app VPN) | `[x]` v1 | `DnsVpnService` (solo-DNS, DoH vía OkHttp, anti-bucle); toggle en Settings. Falta verificar en dispositivo; TCP/IPv6/foreground = v2 |
+| DNS cifrado (Private DNS/DoT) | `[x]` (A) ✔ verificado | Módulo nativo `PrivateDns`: estado real + abrir Ajustes + copiar host DoT al portapapeles. Verificado en emulador (API 37): refleja activo/off correctamente |
+| DNS cifrado (DoH in-app VPN) | `[x]` v2 ✔ verificado | `DnsVpnService` (solo-DNS, DoH vía OkHttp, anti-bucle); toggle en Settings. v2: IPv4+IPv6, UDP+TCP (fallback TC=1→TCP en `DnsTcp`), notificación foreground (special-use FGS), `stop()` real (cierra el tun fd). Setup en hilo de fondo (evita `NetworkOnMainThreadException`). Verificado en emulador (API 37): arranca/resuelve/detiene end-to-end |
 | Red privada (selector) | `[~]` | Selector unificado `Directa / Orbot (Tor) / Mullvad WireGuard` en `@spider/network` (`NETWORK_MODE_LIST`) |
 | Orbot (Tor) | `[~]` | Puente nativo `OrbotModule.kt` (detecta/lanza Orbot vía intent). Falta verificar en build nativo |
 | Excepciones por sitio | `[x]` | **Task 9 hecho**: override por dominio `off`/`strict` en `settingsStore` (`siteExceptions` + `resolveHardening`, persistido); precedencia sobre el master global; hoja por-sitio al tocar el badge de escudo; recarga al cambiar |
@@ -43,12 +43,12 @@ La app **funciona como shell de navegación** con hardening JS real, pero varias
 Pendientes inmediatos, por prioridad:
 
 1. **Verificar en dispositivo/emulador** (necesitan tu interacción, no automatizable):
-   - DoH in-app (VPN): activar toggle → aceptar consentimiento VPN → comprobar resolución (`1.1.1.1/help`, `dnsleaktest.com`).
-   - Private DNS (DoT): activar → estado 🟢.
+   - ~~DoH in-app (VPN): activar toggle → aceptar consentimiento VPN → comprobar resolución~~ → **VERIFICADO** (API 37, 2026-07-04): arranca, `example.com` carga con VPN activa, y apagar detiene el servicio. Falta solo ejercitar TCP (respuesta grande) e IPv6.
+   - ~~Private DNS (DoT): activar → estado 🟢~~ → **VERIFICADO** (API 37): la app refleja activo/off según `private_dns_mode`.
    - Orbot: instalar/lanzar → salida por Tor.
    - El País con perfil **Balanceado**: confirmar que ya no sale el muro anti-bot.
 2. ~~**Task 9 — Excepciones por sitio**~~ → **HECHO**: `siteExceptions` (`off`/`strict`) en `settingsStore`, `resolveHardening()` con precedencia sobre el master, hoja por-sitio al tocar el badge de escudo, persistido. Verificar UX en dispositivo.
-3. **DoH VPN v2**: notificación foreground (fiabilidad), TCP-DNS, IPv6, reconexión.
+3. ~~**DoH VPN v2**: notificación foreground, TCP-DNS, IPv6~~ → **HECHO** (falta solo `reconexión al cambiar de red` y verificar en dispositivo).
 4. **Fase 2 — bloqueo nativo de peticiones** (`shouldInterceptRequest`/`WKContentRuleList`): el salto real de cobertura de trackers (JS tiene techo). react-native-webview no lo expone → puente nativo o GeckoView (Fase 4).
 5. **Auditabilidad** (pediste): crear `LICENSE`, `SECURITY.md` (threat model honesto), `AUDIT.md` (cómo verificar).
 
@@ -78,7 +78,7 @@ Objetivo: que **todo lo que se ve en la UI haga algo real**, incluyendo la resol
 - [x] Módulo nativo `PrivateDnsModule.kt` (+ `PrivateDnsPackage`): lee `private_dns_mode`/`private_dns_specifier` y abre `android.settings.PRIVATE_DNS_SETTINGS`.
 - [x] Wrapper `src/native/privateDns.ts` (`getStatus`/`openSettings`/`resolveState`).
 - [x] Settings refleja el **estado real** (activo/otro/automático/off) y guía a activarlo con el host DoT del proveedor. Se refresca al volver de Ajustes (AppState).
-- [ ] Verificar en el emulador: poner el DNS privado y comprobar que el estado pasa a "activo".
+- [x] **Verificado en emulador (Android 16/API 37, 2026-07-04)**: con `private_dns_mode=hostname` → `dns.mullvad.net`, la cabecera pasa a "● DNS cifrado activo" (verde) y `dumpsys connectivity` muestra `UsePrivateDns: true, ValidatedPrivateDnsAddresses: [194.242.2.2]`. Con `off`, la app muestra el CTA "Activar DNS privado".
 
 **B. DoH in-app automático (VpnService) — v1 HECHO:**
 - [x] `dns/DnsVpnService.kt`: VpnService solo-DNS (rutea solo `10.111.222.3/32`), lee paquetes del tun, resuelve por DoH (OkHttp) y responde. Resolver DNS propio pre-resuelto para evitar el bucle de resolución del host DoH.
@@ -86,8 +86,15 @@ Objetivo: que **todo lo que se ve en la UI haga algo real**, incluyendo la resol
 - [x] `dns/DnsVpnModule.kt` (+ Package, registrado): consentimiento VPN (`VpnService.prepare` + `ActivityEventListener`), start/stop/isRunning.
 - [x] Manifest: `<service>` con `BIND_VPN_SERVICE` + `FOREGROUND_SERVICE`; OkHttp en `build.gradle`.
 - [x] Wrapper `src/native/dnsVpn.ts` + toggle "DoH in-app (VPN)" en Settings.
-- [ ] Verificar en dispositivo: aceptar consentimiento VPN y comprobar resolución (p. ej. `dnsleaktest.com`).
-- [ ] Mejoras v2: TCP-DNS, IPv6, notificación foreground (fiabilidad), reconexión.
+- [x] **Fix hilo principal**: el pre-resolve del host DoH (`InetAddress.getAllByName`) y el `establish()` corren ahora en un hilo de fondo desde `onStartCommand` (el v1 los ejecutaba en el main thread → `NetworkOnMainThreadException` al probar en dispositivo).
+- [x] **Notificación foreground (v2)**: `startForeground` con canal `spider_dns_vpn` + acción "Detener"; `foregroundServiceType="specialUse"` (+ property) y permisos `FOREGROUND_SERVICE_SPECIAL_USE`/`POST_NOTIFICATIONS` (pedido best-effort en `dnsVpn.ts`). Mantiene vivo el túnel contra la muerte en background.
+- [x] **IPv6 (v2)**: el túnel añade dirección/DNS/ruta IPv6 (`fd00:111:222::3`); `DnsPacket` parsea/construye IPv4 e IPv6 con checksum de transporte (pseudo-cabecera).
+- [x] **TCP-DNS (v2)**: `DnsTcp` implementa el mini-stack TCP (handshake → `[len][query]` → `[len][response]` → FIN). Las respuestas UDP mayores que el MTU vuelven truncadas (TC=1) para forzar el reintento por TCP.
+- [x] **Fix `stop()` (bug de v1)**: un `VpnService` con túnel establecido queda *bound* por el framework de VPN, así que `stopSelf()` **no** lo destruye (ni `am stopservice` podía). El nuevo `teardown()` **cierra el `ParcelFileDescriptor`** del tun (desmonta la interfaz y libera el binding) antes de `stopForeground`/`stopSelf`. Usado en `ACTION_STOP`/`onRevoke`/`onTaskRemoved`.
+- [x] **Fix carrera del toggle**: `isRunning` se marca `true` en `onStartCommand` (no al final del setup asíncrono), evitando que `refreshDns()` del `AppState` lea `false` justo tras `start()` y rebote el toggle a OFF.
+- [x] **Verificado en dispositivo (Android 16/API 37, 2026-07-04)**: consentimiento VPN OK; `dumpsys` confirma foreground `types=0x40000000` (special-use) + notificación `spider_dns_vpn`; `example.com` carga con la VPN activa (resolución DoH real end-to-end); apagar el toggle **detiene** el servicio y quita el icono de llave. (El pre-resolve del host DoH y el `establish()` ya no crashean en el main thread.)
+- [ ] Verificación pendiente fina: forzar una respuesta grande (DNSSEC/TXT) para ejercitar la vía **TCP**, y probar la ruta **IPv6** (el emulador usó IPv4). Cubierto por `DnsPacketTest` a nivel de paquete.
+- [ ] Mejoras pendientes: reconexión al cambiar de red; honrar el tamaño EDNS0 anunciado por el cliente en vez del umbral por MTU.
 - [ ] iOS: `NEDNSSettingsManager`/`NEPacketTunnelProvider` (requiere entitlement).
 
 ---

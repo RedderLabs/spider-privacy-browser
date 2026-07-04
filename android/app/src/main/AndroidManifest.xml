@@ -8,8 +8,12 @@
         <package android:name="org.torproject.android" />
     </queries>
 
-    <!-- Required to run our own VpnService for in-app DoH. -->
+    <!-- Required to run our own VpnService for in-app DoH, kept alive as a
+         foreground service (special-use: an encrypted-DNS tunnel). POST_NOTIFICATIONS
+         lets its ongoing notification show on Android 13+. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
       android:name=".MainApplication"
@@ -44,11 +48,16 @@
       </activity>
 
       <!-- In-app DoH tunnel. BIND_VPN_SERVICE + the VpnService intent-filter
-           are mandatory for a VpnService. -->
+           are mandatory for a VpnService. foregroundServiceType=specialUse (with
+           the declared subtype) is required on Android 14+ to call startForeground. -->
       <service
         android:name=".dns.DnsVpnService"
         android:permission="android.permission.BIND_VPN_SERVICE"
+        android:foregroundServiceType="specialUse"
         android:exported="false">
+        <property
+          android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+          android:value="encrypted_dns_doh_tunnel" />
         <intent-filter>
           <action android:name="android.net.VpnService" />
         </intent-filter>
