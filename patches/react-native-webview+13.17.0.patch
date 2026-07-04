@@ -1,0 +1,41 @@
+diff --git a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java
+index 0287e1c..ee68541 100644
+--- a/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java
++++ b/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewClient.java
+@@ -90,6 +90,36 @@ public class RNCWebViewClient extends WebViewClient {
+       reactWebView.callInjectedJavaScriptBeforeContentLoaded();
+     }
+ 
++    // Spider Privacy Browser: native subresource tracker blocking. A blocker is
++    // registered at runtime by the app (dependency direction stays app -> library;
++    // this module never references app classes). The in-page JS blocker only covers
++    // fetch/XHR/sendBeacon; this stops EVERY blocked-host subresource before it
++    // reaches the network. Main-frame navigations are never blocked, and any
++    // failure falls through to normal loading.
++    public interface SubresourceBlocker {
++        boolean shouldBlock(String url);
++    }
++
++    public static volatile SubresourceBlocker sSubresourceBlocker;
++
++    @Override
++    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
++        try {
++            SubresourceBlocker blocker = sSubresourceBlocker;
++            if (blocker != null
++                    && request != null
++                    && !request.isForMainFrame()
++                    && request.getUrl() != null
++                    && blocker.shouldBlock(request.getUrl().toString())) {
++                return new WebResourceResponse(
++                        "text/plain", "utf-8", new java.io.ByteArrayInputStream(new byte[0]));
++            }
++        } catch (Throwable t) {
++            // Never let blocking break a page load.
++        }
++        return super.shouldInterceptRequest(view, request);
++    }
++
+     @Override
+     public boolean shouldOverrideUrlLoading(WebView view, String url) {
+         final RNCWebView rncWebView = (RNCWebView) view;

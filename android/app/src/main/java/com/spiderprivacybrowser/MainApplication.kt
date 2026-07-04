@@ -11,6 +11,7 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
+import com.spiderprivacybrowser.blocklist.NativeBlocklistPackage
 import com.spiderprivacybrowser.dns.DnsVpnPackage
 import com.spiderprivacybrowser.orbot.OrbotPackage
 import com.spiderprivacybrowser.privatedns.PrivateDnsPackage
@@ -26,6 +27,7 @@ class MainApplication : Application(), ReactApplication {
               add(OrbotPackage())
               add(PrivateDnsPackage())
               add(DnsVpnPackage())
+              add(NativeBlocklistPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

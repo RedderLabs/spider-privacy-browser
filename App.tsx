@@ -9,6 +9,10 @@ import {AboutScreen} from './src/screens/AboutScreen';
 import {Drawer} from './src/components/Drawer';
 import {NetworkSheet} from './src/components/NetworkSheet';
 import {ThemeProvider, useTheme} from './src/theme/ThemeContext';
+import {useSettingsStore} from './src/store/settingsStore';
+import {TRACKER_DOMAINS} from '@spider/network';
+import {nativeBlocklist} from './src/native/nativeBlocklist';
+import {FEATURES} from './src/config/env';
 
 function App(): React.JSX.Element {
   // ThemeProvider must sit above the app body so `useTheme()` inside AppInner
@@ -30,6 +34,17 @@ function AppInner(): React.JSX.Element {
   const [showAbout, setShowAbout] = React.useState(false);
   const [showDrawer, setShowDrawer] = React.useState(false);
   const [showNetwork, setShowNetwork] = React.useState(false);
+  const hardeningEnabled = useSettingsStore(s => s.hardeningEnabled);
+
+  // Native subresource blocker (Android): feed it the tracker list once, then keep
+  // it toggled with the master shield. It blocks tracker hosts before they reach
+  // the network — the in-page JS blocker only sees fetch/XHR/sendBeacon.
+  React.useEffect(() => {
+    nativeBlocklist.setDomains(TRACKER_DOMAINS);
+  }, []);
+  React.useEffect(() => {
+    nativeBlocklist.setEnabled(FEATURES.contentBlocking && hardeningEnabled);
+  }, [hardeningEnabled]);
 
   // No auto-created tab: the app can hold zero tabs (e.g. after "close all").
   // The home screen shows, and typing in its search bar creates a tab on demand.

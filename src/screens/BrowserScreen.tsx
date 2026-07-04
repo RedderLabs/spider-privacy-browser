@@ -9,6 +9,7 @@ import {
   Modal,
   ScrollView,
   BackHandler,
+  DeviceEventEmitter,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HardenedWebView, HardenedWebViewHandle, LoadErrorInfo } from '../components/HardenedWebView';
@@ -63,6 +64,19 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
   const webViewRef = useRef<HardenedWebViewHandle>(null);
   const webShotRef = useRef<View>(null);
   const insets = useSafeAreaInsets();
+
+  // The native subresource blocker (patched WebView client) reports each blocked
+  // tracker host; attribute it to the active tab's counter, like the in-page
+  // blocker's postMessage does.
+  const activeTabId = activeTab?.id;
+  React.useEffect(() => {
+    if (!activeTabId) {return;}
+    const sub = DeviceEventEmitter.addListener(
+      'spiderNativeBlocked',
+      (e: { domain?: string }) => recordBlocked(activeTabId, e?.domain),
+    );
+    return () => sub.remove();
+  }, [activeTabId, recordBlocked]);
 
   // Per-site hardening state for the active domain (Task 9). The top status
   // badge reflects the EFFECTIVE state for this site (which may differ from the

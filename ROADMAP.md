@@ -104,9 +104,9 @@ Objetivo: que **todo lo que se ve en la UI haga algo real**, incluyendo la resol
 Objetivo: pasar del `onShouldStartLoadWithRequest` (que solo intercepta navegaciones top-level, no subrecursos) a bloqueo real de peticiones.
 
 - [ ] **iOS — `WKContentRuleList`**: crear `ios/.../ContentRules.swift`, empaquetar reglas JSON (nuevo `packages/content-blocking/`) y compilarlas con `WKContentRuleListStore`. Requiere puente nativo para exponerlo a RN.
-- [ ] **Android — interceptación de recursos**: `shouldInterceptRequest` en un WebViewClient custom (bridge nativo) o adoptar GeckoView (ver Fase 4) para ETP nativo.
+- [x] **Android — interceptación de recursos**: `shouldInterceptRequest` en el `RNCWebViewClient` (patch-package sobre `react-native-webview`) que consulta al módulo nativo `NativeBlocklist`. Bloquea subrecursos de hosts rastreadores antes de que salgan a la red; la lista viene de `@spider/network` (fuente única) y sigue el master shield.
 - [ ] **Filter lists**: pipeline para convertir EasyList/AdGuard al formato `WKContentRuleList`. Documentar cómo se actualizan.
-- [ ] **Conectar el contador real** (Fase 1) a estos bloqueos nativos.
+- [x] **Conectar el contador real** (Fase 1) a estos bloqueos nativos: cada bloqueo nativo emite `spiderNativeBlocked` y `BrowserScreen` lo atribuye al contador de la pestaña activa.
 
 ---
 
