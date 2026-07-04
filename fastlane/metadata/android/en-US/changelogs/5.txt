@@ -1,0 +1,2 @@
+* The home screen now adapts to landscape orientation, keeping the search bar in view.
+* Minor fixes and polish.

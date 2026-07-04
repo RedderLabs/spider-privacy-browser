@@ -1,0 +1,2 @@
+* La pantalla de inicio ahora se adapta al modo horizontal y mantiene visible la barra de búsqueda.
+* Correcciones y pulido menores.

@@ -54,28 +54,33 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
 
   // Scale the hero proportionally, then derive every ring/lock dimension from a
   // single ratio so the padlock keeps its exact proportions at any size.
-  const heroSize = r.moderateScale(RING, 0.4);
+  // Phone landscape (short height): compact the hero so the search bar — the
+  // screen's primary control — stays visible without needing to scroll.
+  const compact = r.width > r.height && !r.isTablet;
+  const heroSize = compact
+    ? Math.round(Math.min(r.height * 0.4, r.moderateScale(RING, 0.4)))
+    : r.moderateScale(RING, 0.4);
   const k = heroSize / RING;
   const px = (n: number) => Math.round(n * k);
-  const logoW = r.moderateScale(164, 0.4);
-  const logoH = r.moderateScale(132, 0.4);
+  const logoW = compact ? r.font(62) : r.moderateScale(164, 0.4);
+  const logoH = compact ? r.font(50) : r.moderateScale(132, 0.4);
 
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, compact && styles.scrollContentCompact]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}>
       <View style={[styles.inner, { maxWidth: r.contentMaxWidth }]}>
         {/* Brand: spider-shield logo + wordmark */}
         <Image source={require('../../logo.png')} style={{ width: logoW, height: logoH, marginBottom: 6 }} resizeMode="contain" />
-        <Text style={[styles.wordmark, { fontSize: r.font(30) }]}>
+        <Text style={[styles.wordmark, { fontSize: compact ? r.font(22) : r.font(30) }]}>
           Spider<Text style={styles.wordmarkAccent}>Privacy</Text>
         </Text>
-        <Text style={[styles.wordmarkSub, { fontSize: r.font(17) }]}>Browser</Text>
+        <Text style={[styles.wordmarkSub, { fontSize: compact ? r.font(13) : r.font(17) }]}>Browser</Text>
 
         {/* Hero search bar — a real input: type a URL or search term to navigate. */}
-        <View style={styles.searchBar}>
+        <View style={[styles.searchBar, compact && styles.searchBarCompact]}>
           <TextInput
             style={[styles.searchInput, { fontSize: r.font(14) }]}
             value={query}
@@ -91,7 +96,9 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
           <ShieldCheckIcon size={18} color={colors.primary} bg={colors.bg} />
         </View>
 
-        {/* Hero: glowing concentric rings around a vector padlock in its circle */}
+        {/* Hero: glowing concentric rings around a vector padlock in its circle.
+            Hidden in phone-landscape (compact) so the search bar stays above the fold. */}
+        {!compact && (
         <View style={[styles.hero, { width: heroSize, height: heroSize }]}>
           {RINGS.map((size, i) => {
             const s = px(size);
@@ -138,8 +145,9 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
             </View>
           </View>
         </View>
+        )}
 
-        <Text style={[styles.tagline, { fontSize: r.font(14) }]}>{t('homeTagline')}</Text>
+        <Text style={[styles.tagline, { fontSize: r.font(14) }, compact && styles.taglineCompact]}>{t('homeTagline')}</Text>
 
         {/* Honest network status: shows the selected transport, taps to Settings */}
         <TouchableOpacity
@@ -153,7 +161,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
           )}
           <Text style={[styles.netText, { fontSize: r.font(14) }, isPrivate && styles.netTextPrivate]}>{netLabel}</Text>
         </TouchableOpacity>
-        <Text style={[styles.netHint, { fontSize: r.font(11) }]}>{t('netTapHint')}</Text>
+        {!compact && <Text style={[styles.netHint, { fontSize: r.font(11) }]}>{t('netTapHint')}</Text>}
       </View>
     </ScrollView>
   );
@@ -168,7 +176,12 @@ const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 32,
   },
+  scrollContentCompact: { paddingVertical: 14, justifyContent: 'flex-start' },
   inner: { width: '100%', alignItems: 'center' },
+
+  // Phone-landscape (compact) overrides: tighter hero so the search bar fits.
+  searchBarCompact: { marginTop: 8, marginBottom: 10, paddingVertical: 11 },
+  taglineCompact: { marginBottom: 8 },
 
   wordmark: { fontWeight: '800', color: colors.onSurface, letterSpacing: -0.5 },
   wordmarkAccent: { color: colors.primaryBright },
