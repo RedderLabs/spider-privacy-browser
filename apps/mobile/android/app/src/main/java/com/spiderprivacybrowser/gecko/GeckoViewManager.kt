@@ -1,5 +1,8 @@
 package com.spiderprivacybrowser.gecko
 
+import android.content.Context
+import android.view.SurfaceView
+import android.view.View
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.WritableMap
@@ -29,7 +32,7 @@ class GeckoViewManager : SimpleViewManager<GeckoView>() {
   override fun getName() = REACT_CLASS
 
   override fun createViewInstance(reactContext: ThemedReactContext): GeckoView {
-    val view = GeckoView(reactContext)
+    val view = RNGeckoView(reactContext)
     val session = GeckoSession()
 
     // Per-session, mutable load state so onCanGoBack/onCanGoForward/onPageStart
@@ -186,6 +189,43 @@ class GeckoViewManager : SimpleViewManager<GeckoView>() {
     val dispatcher = UIManagerHelper.getEventDispatcherForReactTag(reactContext, viewId) ?: return
     val surfaceId = UIManagerHelper.getSurfaceId(reactContext)
     dispatcher.dispatchEvent(GeckoEvent(surfaceId, viewId, name, data))
+  }
+
+  /**
+   * GeckoView is a plain Android [android.widget.FrameLayout] subclass. Under the
+   * New Architecture, RN assigns this view its bounds directly (via the C++ mounting
+   * layer) without triggering the normal measure/layout traversal on its children,
+   * so GeckoView's internal compositor surface stays 0×0 and paints nothing (a blank
+   * white page). Re-running measure+layout on every requestLayout — posted to the
+   * next frame — forces the surface to adopt the RN-assigned size and render. This is
+   * the same workaround react-native-webview/maps/video use for third-party ViewGroups.
+   */
+  private class RNGeckoView(context: Context) : GeckoView(context) {
+    private val layoutRunnable = Runnable {
+      measure(
+          View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+          View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY),
+      )
+      layout(left, top, right, bottom)
+    }
+
+    override fun requestLayout() {
+      super.requestLayout()
+      // RN never schedules a layout pass for this view under Fabric, so drive one
+      // ourselves after the current frame commits.
+      post(layoutRunnable)
+    }
+
+    override fun onViewAdded(child: View) {
+      super.onViewAdded(child)
+      // GeckoView paints web content into its own compositor SurfaceView, which by
+      // default sits BEHIND the app window. The RN container above it has an opaque
+      // background (surfaceCard), so it covers the surface and we see a blank page.
+      // Z-ordering the surface on top of the window makes the web content visible.
+      if (child is SurfaceView) {
+        child.setZOrderOnTop(true)
+      }
+    }
   }
 
   companion object {

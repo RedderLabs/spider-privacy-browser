@@ -5,6 +5,8 @@ import {
   findNodeHandle,
   NativeSyntheticEvent,
   HostComponent,
+  StyleProp,
+  StyleSheet,
   ViewStyle,
 } from 'react-native';
 import type { WebViewNavigation } from 'react-native-webview';
@@ -19,7 +21,7 @@ interface TitleEvent { title: string }
 
 interface NativeGeckoProps {
   url: string;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   onLocationChange?: (e: NativeSyntheticEvent<LocationEvent>) => void;
   onLoadingChange?: (e: NativeSyntheticEvent<LoadingEvent>) => void;
   onLoadError?: (e: NativeSyntheticEvent<ErrorEvent>) => void;
@@ -76,9 +78,18 @@ export const GeckoWebView = forwardRef<HardenedWebViewHandle, HardenedWebViewPro
       <RNTGeckoView
         ref={nativeRef}
         url={url}
-        style={style as ViewStyle}
+        // RNTGeckoView is a raw native view with no intrinsic size; unlike
+        // react-native-webview (which wraps its native view in a flex:1 container),
+        // it collapses to 0-height unless we stretch it to fill the parent.
+        style={[styles.fill, style]}
         onLocationChange={(e) => {
-          nav.current.url = e.nativeEvent.url;
+          // A freshly-opened GeckoSession emits an about:blank location before our
+          // imperative loadUri lands. Propagating it would reset the tab URL to
+          // about:blank, unmount this engine and bounce the user back to Home, so
+          // we drop blank/empty locations and keep the real navigation only.
+          const next = e.nativeEvent.url;
+          if (!next || next === 'about:blank') { return; }
+          nav.current.url = next;
           pushNav();
         }}
         onLoadingChange={(e) => {
@@ -105,3 +116,7 @@ export const GeckoWebView = forwardRef<HardenedWebViewHandle, HardenedWebViewPro
     );
   }
 );
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+});
