@@ -113,6 +113,21 @@ android {
         }
     }
 
+    // Per-ABI APK splits. GeckoView embeds Firefox's engine (libxul.so ~150 MB
+    // uncompressed) once PER ABI; a universal APK bundling all four ABIs blows past
+    // the 80 MB budget. Splits emit one APK per ABI so each device only carries its
+    // own architecture. `universalApk false` disables the fat combined APK. Play
+    // should ship an AAB (bundleRelease) instead, which does the same per-device
+    // slicing automatically; splits keep F-Droid / sideload builds within budget.
+    splits {
+        abi {
+            enable true
+            reset()
+            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            universalApk false
+        }
+    }
+
     defaultConfig {
         applicationId "com.spiderprivacybrowser"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -149,6 +164,20 @@ android {
             signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+}
+
+// Give each per-ABI split its own versionCode so an app store never sees two APKs
+// with the same code (Play/F-Droid reject that). Scheme: base*10 + abi-ordinal, so
+// versionName 0.0.11 (code 11) yields 111/112/113/114. Higher ordinal = preferred
+// on 64-bit devices. Not needed for AAB (bundleRelease), which slices per-device.
+android.applicationVariants.all { variant ->
+    def abiCodes = ["armeabi-v7a": 1, "x86": 2, "arm64-v8a": 3, "x86_64": 4]
+    variant.outputs.each { output ->
+        def abi = output.getFilter(com.android.build.OutputFile.ABI)
+        if (abi != null) {
+            output.versionCodeOverride = variant.versionCode * 10 + abiCodes.get(abi, 0)
         }
     }
 }

@@ -82,9 +82,25 @@ Qué defensas del bundle JS son redundantes con lo que Gecko ya hace, y cuáles 
 - **Crash en Android 16 / API 37.** GeckoView 140 hace SIGSEGV nativo en el arranque
   en API 37; probar en un AVD **≤ 35**. Subir a GeckoView 152 lo evitaría, pero exige
   `compileSdk 36` + AGP 8.9.1 (ver comentarios en `android/app/build.gradle`).
-- **Tamaño del APK.** GeckoView empotra el motor de Firefox (`libxul.so`). Ver
-  `docs/PUBLISHING.md` (splits por ABI / AAB) — la app nunca debe superar 80 MB por
-  dispositivo, así que un APK universal con Gecko está descartado.
+- **Tamaño del APK — NO cabe en el presupuesto de 80 MB.** GeckoView empotra el
+  motor de Firefox (`libxul.so`, ~143 MB sin comprimir). Con ABI splits activados
+  (`android.splits.abi`, ya configurado — evitan el APK universal de ~300 MB), el
+  release **por-ABI** medido (v0.0.11, sin minify) es:
+
+  | ABI | APK release |
+  | --- | --- |
+  | arm64-v8a | **92 MB** |
+  | armeabi-v7a | 89 MB |
+  | x86_64 | 97 MB |
+  | x86 | 101 MB |
+
+  El `lib/` comprimido de arm64 ya son 68.7 MB (libxul domina), así que **ni con
+  splits ni con minify se baja de 80 MB** — GeckoView es ~90 MB/dispositivo por
+  naturaleza (rango Firefox Focus). **Conclusión:** con la regla de "la app nunca
+  supera 80 MB por dispositivo", **GeckoView no se puede publicar activado**. Por eso
+  se queda OFF/experimental: el build por defecto (motor WebView) pesa ~21 MB y sí
+  cumple. Para shippearlo habría que (a) relajar el presupuesto para una edición
+  "GeckoView" aparte, o (b) esperar un GeckoView más ligero. Ver `docs/PUBLISHING.md`.
 - **Cosmético del render.** El `SurfaceView` del compositor se ordena sobre la
   ventana (`setZOrderOnTop`) para ser visible sobre el fondo opaco del contenedor;
   como efecto, no respeta el `borderRadius` del contenedor (esquinas cuadradas) y
