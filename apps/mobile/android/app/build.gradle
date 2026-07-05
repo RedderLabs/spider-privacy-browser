@@ -16,9 +16,10 @@ react {
     reactNativeDir = file("../../../../node_modules/react-native")
     codegenDir = file("../../../../node_modules/@react-native/codegen")
     cliFile = file("../../../../node_modules/react-native/cli.js")
-    // Release JS bundling (Hermes) needs an explicit hermesc path too: the
-    // plugin default resolves it relative to the app, which misses the hoisted
-    // root node_modules. %OS-BIN% is substituted per-platform by the plugin.
+    // Release JS bundling (Hermes) needs an explicit hermesc path too: the plugin
+    // default resolves it relative to the app and misses the hoisted root
+    // node_modules, failing `assembleRelease` with "Couldn't determine Hermesc
+    // location". %OS-BIN% is substituted per-platform by the plugin.
     hermesCommand = file("../../../../node_modules/react-native/sdks/hermesc/%OS-BIN%/hermesc").toString()
 
     /* Variants */
@@ -118,8 +119,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bump both on every release. versionName must match src/version.ts
         // (the string shown in the Drawer/About); versionCode increments by 1.
-        versionCode 8
-        versionName "0.0.8"
+        versionCode 9
+        versionName "0.0.9"
     }
     signingConfigs {
         debug {
