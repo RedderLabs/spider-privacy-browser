@@ -7,12 +7,15 @@ describe('build-time env config', () => {
   it('exposes boolean feature flags', () => {
     expect(typeof FEATURES.privacyJs).toBe('boolean');
     expect(typeof FEATURES.contentBlocking).toBe('boolean');
+    expect(typeof FEATURES.geckoView).toBe('boolean');
   });
 
   it('matches the committed .env defaults', () => {
-    // .env ships with both flags on and Mullvad as the default DoH provider.
+    // .env ships with both hardening flags on and Mullvad as the default DoH
+    // provider; the experimental GeckoView engine is opt-in (OFF by default).
     expect(FEATURES.privacyJs).toBe(true);
     expect(FEATURES.contentBlocking).toBe(true);
+    expect(FEATURES.geckoView).toBe(false);
     expect(DEFAULT_DOH_PROVIDER_ID).toBe('mullvad');
   });
 });

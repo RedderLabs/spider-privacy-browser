@@ -4,5 +4,6 @@
 declare module '@env' {
   export const PRIVACY_JS_ENABLED: string | undefined;
   export const CONTENT_BLOCKING_ENABLED: string | undefined;
+  export const GECKOVIEW_ENABLED: string | undefined;
   export const DEFAULT_DOH_PROVIDER: string | undefined;
 }

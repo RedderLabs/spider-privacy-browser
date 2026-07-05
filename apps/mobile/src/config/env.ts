@@ -4,6 +4,7 @@
 import {
   PRIVACY_JS_ENABLED,
   CONTENT_BLOCKING_ENABLED,
+  GECKOVIEW_ENABLED,
   DEFAULT_DOH_PROVIDER,
 } from '@env';
 
@@ -23,6 +24,10 @@ export const FEATURES = {
   // Master BUILD switch for tracker request blocking (in-page blocker + the
   // navigation blocklist in HardenedWebView).
   contentBlocking: flag(CONTENT_BLOCKING_ENABLED, true),
+  // Opt-IN switch for the experimental GeckoView engine (Android-only, Phase 4).
+  // Default OFF — the app renders via react-native-webview until GeckoView
+  // reaches feature parity (JS injection, message bridge, tracker counter).
+  geckoView: flag(GECKOVIEW_ENABLED, false),
 } as const;
 
 // Default encrypted-DNS provider id used to seed settingsStore.dohProvider.

@@ -19,3 +19,11 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// GeckoView (Phase 4, experimental engine) is published on Mozilla's Maven repo,
+// not Maven Central. Added for all projects so :app can resolve it.
+allprojects {
+    repositories {
+        maven { url = uri("https://maven.mozilla.org/maven2/") }
+    }
+}

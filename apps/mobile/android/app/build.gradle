@@ -16,6 +16,10 @@ react {
     reactNativeDir = file("../../../../node_modules/react-native")
     codegenDir = file("../../../../node_modules/@react-native/codegen")
     cliFile = file("../../../../node_modules/react-native/cli.js")
+    // Release JS bundling (Hermes) needs an explicit hermesc path too: the
+    // plugin default resolves it relative to the app, which misses the hoisted
+    // root node_modules. %OS-BIN% is substituted per-platform by the plugin.
+    hermesCommand = file("../../../../node_modules/react-native/sdks/hermesc/%OS-BIN%/hermesc").toString()
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
@@ -89,6 +93,25 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.spiderprivacybrowser"
+
+    // GeckoView requires Java 17 source/target compatibility.
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    // GeckoView's native loader (GeckoLoader.putenv) needs the .so files
+    // extracted to disk; the modern default (extractNativeLibs=false, libs read
+    // straight from the APK) makes it SIGSEGV at startup. Force legacy packaging.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     defaultConfig {
         applicationId "com.spiderprivacybrowser"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -136,6 +159,17 @@ dependencies {
     // Used by the DNS-over-HTTPS VpnService (custom DNS resolver to avoid the
     // resolution loop). Same major version React Native already ships.
     implementation("com.squareup.okhttp3:okhttp:4.9.2")
+
+    // GeckoView — Phase 4 experimental browser engine (Mozilla's own renderer,
+    // engine-level Enhanced Tracking Protection + anti-fingerprinting). Behind
+    // the GECKOVIEW_ENABLED build flag on the JS side; the native lib is always
+    // linked (adds significant APK size — mitigate with ABI splits / AAB).
+    // Universal multi-ABI artifact from maven.mozilla.org (see root build.gradle).
+    // Pinned to 140.x: it depends on androidx.core 1.16.0 (compileSdk 35 / AGP
+    // 8.8.2, this project's toolchain). GeckoView >= 145 pulls androidx.core
+    // 1.17+/1.18+, which force compileSdk 36 + AGP 8.9.1 — bump those first if
+    // upgrading GeckoView.
+    implementation("org.mozilla.geckoview:geckoview:140.0.20250707120347")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

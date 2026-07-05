@@ -13,6 +13,7 @@ import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
 import com.spiderprivacybrowser.blocklist.NativeBlocklistPackage
 import com.spiderprivacybrowser.dns.DnsVpnPackage
+import com.spiderprivacybrowser.gecko.GeckoViewPackage
 import com.spiderprivacybrowser.orbot.OrbotPackage
 import com.spiderprivacybrowser.privatedns.PrivateDnsPackage
 
@@ -28,6 +29,7 @@ class MainApplication : Application(), ReactApplication {
               add(PrivateDnsPackage())
               add(DnsVpnPackage())
               add(NativeBlocklistPackage())
+              add(GeckoViewPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"
