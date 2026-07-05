@@ -30,8 +30,20 @@ interface NativeGeckoProps {
 
 // RNTGeckoView is a legacy SimpleViewManager rendered under Fabric via the
 // automatic interop layer (New Architecture). requireNativeComponent resolves it.
+//
+// requireNativeComponent registers a view config keyed by name and THROWS on a
+// second registration with the same name. Under Fast Refresh this module can be
+// re-evaluated (e.g. when an env value it depends on changes), which would call
+// requireNativeComponent again and crash with "Tried to register two views with
+// the same name RNTGeckoView". The JS runtime (and thus globalThis) survives a
+// Fast Refresh, so we cache the resolved component there and reuse it.
+const globalCache = globalThis as unknown as {
+  __RNTGeckoView__?: HostComponent<NativeGeckoProps>;
+};
 const RNTGeckoView: HostComponent<NativeGeckoProps> =
-  requireNativeComponent<NativeGeckoProps>('RNTGeckoView');
+  globalCache.__RNTGeckoView__ ??
+  (globalCache.__RNTGeckoView__ =
+    requireNativeComponent<NativeGeckoProps>('RNTGeckoView'));
 
 /**
  * GeckoView-backed engine (Android, Phase 4) with the SAME imperative handle and
