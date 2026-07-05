@@ -16,6 +16,11 @@ react {
     reactNativeDir = file("../../../../node_modules/react-native")
     codegenDir = file("../../../../node_modules/@react-native/codegen")
     cliFile = file("../../../../node_modules/react-native/cli.js")
+    // Release JS bundling (Hermes) needs an explicit hermesc path too: the plugin
+    // default resolves it relative to the app and misses the hoisted root
+    // node_modules, failing `assembleRelease` with "Couldn't determine Hermesc
+    // location". %OS-BIN% is substituted per-platform by the plugin.
+    hermesCommand = file("../../../../node_modules/react-native/sdks/hermesc/%OS-BIN%/hermesc").toString()
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
