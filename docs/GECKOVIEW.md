@@ -79,9 +79,13 @@ Qué defensas del bundle JS son redundantes con lo que Gecko ya hace, y cuáles 
   ignora, de momento, los switches por-defensa y las excepciones por dominio que sí
   respeta el motor WebView. Granularidad = trabajo futuro (requiere mensajería
   content-script ↔ nativo o (re)instalar según settings).
-- **Crash en Android 16 / API 37.** GeckoView 140 hace SIGSEGV nativo en el arranque
-  en API 37; probar en un AVD **≤ 35**. Subir a GeckoView 152 lo evitaría, pero exige
-  `compileSdk 36` + AGP 8.9.1 (ver comentarios en `android/app/build.gradle`).
+- **Android 16 (API 36): OK en release, crash solo en debug.** GeckoView 140 hace
+  SIGSEGV nativo (`GeckoLoader→putenv`) solo en builds **debuggables**, que
+  auto-leen un archivo de config de debug con una entrada nula. Un **release** no lo
+  lee, así que corre bien. **Verificado en dispositivo físico Android 16 / API 36 /
+  arm64** (`assembleRelease`): example.com renderiza, la extensión de hardening
+  instala. En debug, mitigado con `configFilePath("")` en `GeckoRuntimeProvider`.
+  (Emulador API 34/35 sigue valiendo para debug.)
 - **Tamaño del APK — NO cabe en el presupuesto de 80 MB.** GeckoView empotra el
   motor de Firefox (`libxul.so`, ~143 MB sin comprimir). Con ABI splits activados
   (`android.splits.abi`, ya configurado — evitan el APK universal de ~300 MB), el
