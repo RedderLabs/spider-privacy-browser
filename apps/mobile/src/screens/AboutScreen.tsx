@@ -41,7 +41,7 @@ const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
   scrollContent: { paddingHorizontal: 20, paddingTop: 8 },
 
   brand: { alignItems: 'center', paddingVertical: 16, marginBottom: 8 },
-  logo: { width: 96, height: 82, marginBottom: 8 },
+  logo: { marginBottom: 8 },
   wordmark: { fontSize: 20, fontWeight: '800', color: colors.onSurface },
   wordmarkAccent: { color: colors.primaryBright },
   version: { fontSize: 12, color: colors.faint, marginTop: 4 },
@@ -167,7 +167,11 @@ export const AboutScreen: React.FC<AboutScreenProps> = ({ onClose, onOpenUrl }) 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: contentPad }]} showsVerticalScrollIndicator={false}>
         {/* App brand */}
         <View style={styles.brand}>
-          <Image source={require('../../logo.png')} style={styles.logo} resizeMode="contain" />
+          <Image
+            source={require('../../logo.png')}
+            style={[styles.logo, { width: r.moderateScale(96, 0.4), height: r.moderateScale(82, 0.4) }]}
+            resizeMode="contain"
+          />
           <Text style={styles.wordmark}>
             Spider<Text style={styles.wordmarkAccent}>Privacy</Text> Browser
           </Text>

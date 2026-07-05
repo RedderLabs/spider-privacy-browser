@@ -25,6 +25,7 @@ import { useT } from '../i18n';
 import { useSettingsStore } from '../store/settingsStore';
 import { useTabStore } from '../store/tabStore';
 import { alpha, type Palette, type Surfaces } from '../theme/theme';
+import { useResponsive } from '../utils/responsive';
 import { useTheme } from '../theme/ThemeContext';
 import { APP_VERSION } from '../version';
 import { ShieldCheckIcon, SettingsIcon, OnionIcon, TabsIcon, GlobeIcon, InfoIcon } from './icons';
@@ -47,7 +48,11 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
   const tabCount = useTabStore((s) => s.tabs.length);
   const insets = useSafeAreaInsets();
   const { colors, surfaces } = useTheme();
+  const r = useResponsive();
   const styles = React.useMemo(() => makeStyles(colors, surfaces), [colors, surfaces]);
+  // Scale the brand logo with the device (gently) instead of a fixed 76×66, the
+  // same way the Home hero logo does — so it doesn't look tiny on large phones.
+  const logoSize = { width: r.moderateScale(76, 0.4), height: r.moderateScale(66, 0.4) };
 
   // Keep the Modal mounted through the slide-out animation.
   const [mounted, setMounted] = useState(visible);
@@ -98,7 +103,7 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
           ]}>
           {/* Brand header */}
           <View style={styles.brand}>
-            <Image source={require('../../logo.png')} style={styles.logo} resizeMode="contain" />
+            <Image source={require('../../logo.png')} style={[styles.logo, logoSize]} resizeMode="contain" />
             <Text style={styles.wordmark}>
               Spider<Text style={styles.wordmarkAccent}>Privacy</Text>
             </Text>
@@ -208,7 +213,7 @@ const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
 
   brand: { alignItems: 'flex-start', paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: surfaces.divider },
-  logo: { width: 76, height: 66, marginBottom: 8, marginLeft: -6 },
+  logo: { marginBottom: 8, marginLeft: -6 },
   wordmark: { fontSize: 20, fontWeight: '800', color: colors.onSurface },
   wordmarkAccent: { color: colors.primaryBright },
   tagline: { fontSize: 12, color: colors.muted, marginTop: 4 },
