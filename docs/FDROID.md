@@ -48,7 +48,7 @@ Builds:
   - versionName: 0.0.4
     versionCode: 4
     commit: v0.0.4
-    subdir: android/app
+    subdir: apps/mobile/android/app
     sudo:
       - sysctl fs.inotify.max_user_watches=524288 || true
       - curl -Lo node.tar.gz https://nodejs.org/dist/v20.18.1/node-v20.18.1-linux-x64.tar.gz
@@ -57,7 +57,7 @@ Builds:
       - npm -g install npm
     ndk: 27.1.12297006
     init:
-      - cd ../.. && npm ci
+      - cd ../../../.. && npm ci
     gradle:
       - yes
     output: build/outputs/apk/release/app-release-unsigned.apk
@@ -73,8 +73,8 @@ CurrentVersionCode: 4
 Qué hace cada parte:
 
 - **`sudo`**: instala Node como root (la imagen base de F-Droid no trae Node reciente). El `sha256sum -c` verifica el binario.
-- **`ndk`**: la versión que usa el proyecto (`android/build.gradle`).
-- **`init`**: `npm ci` desde la raíz del repo (`cd ../..` porque `subdir` es `android/app`).
+- **`ndk`**: la versión que usa el proyecto (`apps/mobile/android/build.gradle`).
+- **`init`**: `npm ci` desde la raíz del repo (`cd ../../../..` porque `subdir` es `apps/mobile/android/app`). La app es un monorepo npm: la raíz instala los workspaces (`apps/*` + `packages/*`). Nota: los tags anteriores a la migración a monorepo (≤ `v0.0.7`) tenían la app en la raíz, así que un build de esos tags usaría `subdir: android/app` y `cd ../..`.
 - **`gradle: [yes]`**: `assembleRelease` sin product flavor.
 - **`scandelete: node_modules`**: evita que el escáner de F-Droid recorra esa carpeta buscando binarios.
 - **No hay bloque `prebuild`**: no hace falta, la app ya es FOSS-limpia (nada de GMS/Firebase que quitar).

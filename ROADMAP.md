@@ -32,7 +32,7 @@ La app **funciona como shell de navegación** con hardening JS real, pero varias
 | Excepciones por sitio | `[x]` | **Task 9 hecho**: override por dominio `off`/`strict` en `settingsStore` (`siteExceptions` + `resolveHardening`, persistido); precedencia sobre el master global; hoja por-sitio al tocar el badge de escudo; recarga al cambiar |
 | VPN WireGuard | `[ ]` | Mullvad WireGuard marcado "próximamente"; sin `VpnService` propio todavía |
 | GeckoView | `[ ]` | No existe (solo `MainActivity`/`MainApplication` por defecto) |
-| Monorepo (mover app a `apps/mobile/`) | `[ ]` | Pendiente; se hace en Fase 3 cuando aparezca código nativo compartido |
+| Monorepo (mover app a `apps/mobile/`) | `[x]` ✔ (2026-07-05) | App RN movida a `apps/mobile/`; workspaces `apps/*`+`packages/*`; build Android verificado (BUILD SUCCESSFUL). iOS reescrito sin compilar (falta Mac) |
 | Persistencia (incógnito-puro) | `[x]` | **Solo el idioma** sobrevive al cierre/kill (`partialize`: `language`). Toggles, perfil, DoH, excepciones por-sitio, `networkMode` y pestañas se reinician a defaults en cada arranque. DNS VPN: `START_NOT_STICKY` + `onTaskRemoved` (no revive en segundo plano; batería) |
 | Tests / lint | `[x]` | Jest 38/38 (privacyBundle, tabStore, blocklist, requestBlocker, i18n, App smoke, env, siteExceptions); `npm run lint` pasa (0 errores) |
 
@@ -118,12 +118,12 @@ Objetivo: terminar la migración iniciada. Los paquetes ya son workspaces; falta
 - [x] `src/privacy/bundle.ts` reducido a adaptador que consume `@spider/privacy-js` (fuente única).
 - [x] Lista DoH unificada en `@spider/network` y consumida por `SettingsScreen`.
 - [x] `metro.config.js` (`watchFolders`) y `tsconfig.json` (`paths`) configurados para el workspace.
-- [ ] Mover la app RN a `apps/mobile/` (⚠️ rompe rutas de Gradle/Xcode/Metro — hacer con builds nativos disponibles para probar).
-- [ ] Añadir `apps/*` a `workspaces` en el `package.json` raíz.
-- [ ] Extraer las reglas de content-blocking a `packages/content-blocking/`.
-- [ ] (Opcional) Evaluar pnpm+Turborepo si el número de paquetes crece; hoy el repo usa **npm** y es suficiente.
+- [x] **Mover la app RN a `apps/mobile/`** (hecho 2026-07-05): `git mv` de `android/`, `ios/`, `src/`, `__tests__/`, `fastlane/`, `.bundle/` y toda la config JS a `apps/mobile/`. Rutas reescritas por el hoisting de npm: `settings.gradle` `includeBuild` del gradle-plugin (3 niveles → `node_modules` raíz), `app/build.gradle` `reactNativeDir`/`codegenDir`/`cliFile` (4 niveles), `metro.config.js` `watchFolders`/`nodeModulesPaths` a la raíz, `jest`/`tsconfig` `@spider/*` a `../../packages`. El **Podfile ya resolvía con `node` (`require.resolve`)** así que iOS no necesitó reescritura de rutas (pendiente compilar en Mac). El asset `logo.png` (requerido por Home/Drawer/About) se movió a `apps/mobile/logo.png` y ahora sí se trackea. **Verificado: `gradlew :app:assembleDebug` → BUILD SUCCESSFUL (APK generado); `tsc`/`lint`/`test` 60/60 verdes.**
+- [x] Añadir `apps/*` a `workspaces` en el `package.json` raíz (raíz = paraguas de workspaces con scripts delegados `-w apps/mobile` + `postinstall: patch-package`).
+- [x] Extraer las reglas de content-blocking a `packages/content-blocking/` (ya estaba: paquete `@spider/content-blocking` con el pipeline de filter lists — casilla obsoleta cerrada).
+- [x] (Opcional) Evaluado pnpm+Turborepo: **se mantiene npm workspaces**; con 3 paquetes + 1 app no compensa la complejidad. Revisar si el nº de apps/paquetes crece.
 
-> No mover la app antes: sin código nativo compartido, el movimiento físico solo añade fricción y riesgo de romper los builds.
+> La app RN vive ahora en `apps/mobile/`; `ios/` quedó reescrito pero SIN compilar (no hay Xcode en Windows — verificar en Mac).
 
 ---
 

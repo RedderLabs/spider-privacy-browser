@@ -34,6 +34,10 @@ todos los usuarios se parezcan entre sí), llevado a un navegador móvil ligero.
 
 ## Poner en marcha
 
+El repo es un monorepo npm: la app React Native vive en `apps/mobile/` y el
+código compartido en `packages/*`. Los comandos de abajo se lanzan desde la raíz
+(los scripts delegan en el workspace `apps/mobile`).
+
 ```bash
 npm install
 npm start          # arranca Metro
@@ -44,11 +48,11 @@ Para generar un APK de release firmado (usa la clave de debug por defecto; para
 publicar hay que configurar una clave propia):
 
 ```bash
-cd android
+cd apps/mobile/android
 ./gradlew assembleRelease
 ```
 
-El APK queda en `android/app/build/outputs/apk/release/`.
+El APK queda en `apps/mobile/android/app/build/outputs/apk/release/`.
 
 ## Cómo está organizado
 

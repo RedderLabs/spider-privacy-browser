@@ -8,17 +8,17 @@ Todo lo de aquí se ha pensado para un portátil normal con Node, el SDK de Andr
 
 ```bash
 npm ci
-cd android && ./gradlew assembleRelease     # en Windows: .\gradlew.bat assembleRelease
+cd apps/mobile/android && ./gradlew assembleRelease     # en Windows: .\gradlew.bat assembleRelease
 ```
 
-El APK sale en `android/app/build/outputs/apk/release/`. F-Droid hace exactamente esto en un entorno limpio (ver [`FDROID.md`](FDROID.md)), así que el binario es reproducible desde este código.
+El APK sale en `apps/mobile/android/app/build/outputs/apk/release/`. F-Droid hace exactamente esto en un entorno limpio (ver [`FDROID.md`](FDROID.md)), así que el binario es reproducible desde este código.
 
 ## 2. Que no hay telemetría ni SDKs propietarios
 
 ```bash
 # No debe aparecer NADA de esto en el código ni en las dependencias:
 grep -rniE "firebase|google-services|gms|crashlytics|analytics|amplitude|mixpanel|sentry" \
-  package.json packages/ src/ android/app/src android/app/build.gradle
+  package.json packages/ apps/mobile/src apps/mobile/android/app/src apps/mobile/android/app/build.gradle
 ```
 
 Y revisa las dependencias en `package.json`: son una lista corta (React Native, WebView, Zustand, AsyncStorage, safe-area, screens, view-shot). No hay ninguna librería de analítica.
@@ -26,9 +26,9 @@ Y revisa las dependencias en `package.json`: son una lista corta (React Native, 
 ## 3. Los permisos que pide
 
 ```bash
-grep -nE "uses-permission|<queries" android/app/src/main/AndroidManifest.xml
+grep -nE "uses-permission|<queries" apps/mobile/android/app/src/main/AndroidManifest.xml
 # o sobre el APK ya construido:
-aapt dump permissions android/app/build/outputs/apk/release/app-release.apk
+aapt dump permissions apps/mobile/android/app/build/outputs/apk/release/app-release.apk
 ```
 
 Deberías ver solo `INTERNET`, los de servicio en primer plano para la VPN de DNS
@@ -42,7 +42,7 @@ La regla vive en `src/store/settingsStore.ts`, en `partialize`: lo único que se
 escribe a disco (`AsyncStorage`) son `language` y `themeMode`.
 
 ```bash
-grep -n "partialize" -A4 src/store/settingsStore.ts
+grep -n "partialize" -A4 apps/mobile/src/store/settingsStore.ts
 ```
 
 Compruébalo en caliente, con la app instalada:
@@ -82,7 +82,7 @@ mitmproxy
 
 ```bash
 grep -nE "incognito|cacheEnabled|mixedContentMode|thirdPartyCookies|userAgent" \
-  src/components/HardenedWebView.tsx
+  apps/mobile/src/components/HardenedWebView.tsx
 ```
 
 Debes ver `incognito`, `cacheEnabled={false}`, `mixedContentMode="never"`, las
@@ -112,9 +112,9 @@ cookies de terceros atadas al toggle, y un `userAgent` fijo coherente con el
 ## 8. Los tests, el lint y los tipos
 
 ```bash
-npm test              # Jest (privacyBundle, blocklist, requestBlocker, siteExceptions, i18n, tabStore, ...)
-npm run lint          # ESLint, 0 errores
-npx tsc --noEmit      # tipos
+npm test                       # Jest (privacyBundle, blocklist, requestBlocker, siteExceptions, i18n, tabStore, ...)
+npm run lint                   # ESLint, 0 errores
+npx tsc --noEmit -p apps/mobile   # tipos
 ```
 
 ## 9. La licencia

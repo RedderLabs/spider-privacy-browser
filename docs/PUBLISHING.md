@@ -1,9 +1,10 @@
 # Publishing
 
 How to ship Spider Privacy Browser to F-Droid and Google Play. Store listing text
-lives in `fastlane/metadata/android/<locale>/` (read by both stores). Bump the
-version first: `src/version.ts` (versionName) and `android/app/build.gradle`
-(`versionName` + `versionCode`), then add a `fastlane/.../changelogs/<versionCode>.txt`.
+lives in `apps/mobile/fastlane/metadata/android/<locale>/` (read by both stores).
+Bump the version first: `apps/mobile/src/version.ts` (versionName) and
+`apps/mobile/android/app/build.gradle` (`versionName` + `versionCode`), then add a
+`apps/mobile/fastlane/.../changelogs/<versionCode>.txt`.
 
 ## Release signing (both stores)
 
@@ -12,14 +13,15 @@ needs a real upload key:
 
 1. Generate a key (once, keep it safe — losing it means you can't update the app):
    ```
-   keytool -genkeypair -v -keystore android/app/spider-release.keystore \
+   keytool -genkeypair -v -keystore apps/mobile/android/app/spider-release.keystore \
      -alias spider -keyalg RSA -keysize 2048 -validity 10000
    ```
-2. Copy `android/keystore.properties.example` to `android/keystore.properties`
-   (gitignored) and fill in the passwords/alias.
+2. Copy `apps/mobile/android/keystore.properties.example` to
+   `apps/mobile/android/keystore.properties` (gitignored) and fill in the
+   passwords/alias.
 3. Build:
-   - APK (F-Droid tests against source, but useful locally): `cd android && ./gradlew assembleRelease`
-   - AAB (Google Play): `cd android && ./gradlew bundleRelease` → `android/app/build/outputs/bundle/release/`
+   - APK (F-Droid tests against source, but useful locally): `cd apps/mobile/android && ./gradlew assembleRelease`
+   - AAB (Google Play): `cd apps/mobile/android && ./gradlew bundleRelease` → `apps/mobile/android/app/build/outputs/bundle/release/`
 
 Never commit the keystore or `keystore.properties`.
 
@@ -29,7 +31,7 @@ F-Droid builds from source on their own infrastructure — you don't upload a bi
 
 - **License:** AGPL-3.0 (`LICENSE`). No proprietary dependencies, no Google Play
   Services — verified.
-- **Metadata:** already under `fastlane/metadata/android/en-US/` and `es-ES/`
+- **Metadata:** already under `apps/mobile/fastlane/metadata/android/en-US/` and `es-ES/`
   (title, short/full description, changelogs). Add screenshots under
   `.../<locale>/images/phoneScreenshots/` when ready.
 - **Submit:** open a merge request against
@@ -44,7 +46,7 @@ F-Droid builds from source on their own infrastructure — you don't upload a bi
 - **Upload:** the signed **AAB** from `bundleRelease` (Play no longer accepts APKs
   for new apps). Consider enrolling in Play App Signing.
 - **16 KB page size:** required for new apps; already covered by React Native 0.79.
-- **Store listing:** reuse the `fastlane` title/descriptions. Assets needed:
+- **Store listing:** reuse the `apps/mobile/fastlane` title/descriptions. Assets needed:
   - App icon 512×512 — `SpyderBrowser_icon_512.png` (in repo root).
   - Feature graphic 1024×500 — to be created.
   - Phone screenshots (min 2).
@@ -58,8 +60,8 @@ F-Droid builds from source on their own infrastructure — you don't upload a bi
 
 ## Checklist per release
 
-- [ ] Bump `src/version.ts` + `versionName`/`versionCode` in `build.gradle`.
-- [ ] Add `fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt`.
+- [ ] Bump `apps/mobile/src/version.ts` + `versionName`/`versionCode` in `apps/mobile/android/app/build.gradle`.
+- [ ] Add `apps/mobile/fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt`.
 - [ ] `npm test` and `npx tsc --noEmit` pass.
 - [ ] Build the signed AAB and smoke-test it on a device.
 - [ ] Tag `vX.Y.Z` and push (F-Droid picks up the tag).
