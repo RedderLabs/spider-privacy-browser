@@ -100,8 +100,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bump both on every release. versionName must match src/version.ts
         // (the string shown in the Drawer/About); versionCode increments by 1.
-        versionCode 10
-        versionName "0.0.10"
+        versionCode 11
+        versionName "0.0.11"
     }
     signingConfigs {
         debug {

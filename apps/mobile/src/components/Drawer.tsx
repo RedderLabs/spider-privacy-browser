@@ -258,5 +258,5 @@ const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
 
   footer: { marginTop: 'auto', paddingBottom: 28 },
   footerText: { fontSize: 11, color: colors.faint, lineHeight: 16 },
-  version: { fontSize: 10, color: alpha(colors.white, 0.2), marginTop: 8 },
+  version: { fontSize: 10, color: colors.faint, marginTop: 8 },
 });
