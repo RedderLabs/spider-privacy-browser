@@ -1,0 +1,6 @@
+# Node build/codegen scripts (plain CommonJS, not part of the RN app bundle —
+# the RN Babel/ESLint config doesn't apply to them).
+scripts/
+# Generated WebExtension bundle (source of truth is @spider/privacy-js; see
+# scripts/gen-gecko-privacy-ext.js).
+android/app/src/main/assets/privacy-ext/

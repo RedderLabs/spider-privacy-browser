@@ -11,6 +11,7 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.annotations.ReactProp
 import com.facebook.react.uimanager.events.Event
+import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
@@ -106,6 +107,19 @@ class GeckoViewManager : SimpleViewManager<GeckoView>() {
           }
         }
 
+    // Native ETP (STRICT) is what actually blocks tracker subresources in Gecko —
+    // the in-page JS blocker used by the WebView engine is redundant here. Each
+    // block fires onContentBlocked; surface the tracker's host to JS so the per-tab
+    // counter can record it (same onBlocked contract as the WebView engine).
+    session.contentBlockingDelegate =
+        object : ContentBlocking.Delegate {
+          override fun onContentBlocked(s: GeckoSession, event: ContentBlocking.BlockEvent) {
+            emit(reactContext, view.id, EVENT_BLOCKED, Arguments.createMap().apply {
+              putString("domain", hostOf(event.uri))
+            })
+          }
+        }
+
     session.open(GeckoRuntimeProvider.get(reactContext))
     view.setSession(session)
     return view
@@ -154,7 +168,18 @@ class GeckoViewManager : SimpleViewManager<GeckoView>() {
           EVENT_LOADING to mapOf("registrationName" to "onLoadingChange"),
           EVENT_ERROR to mapOf("registrationName" to "onLoadError"),
           EVENT_TITLE to mapOf("registrationName" to "onTitleChange"),
+          EVENT_BLOCKED to mapOf("registrationName" to "onBlocked"),
       )
+
+  /** Registrable host of a URI, for the tracker counter; null-safe and lenient. */
+  private fun hostOf(uri: String?): String {
+    if (uri.isNullOrEmpty()) return ""
+    return try {
+      android.net.Uri.parse(uri).host ?: ""
+    } catch (e: Exception) {
+      ""
+    }
+  }
 
   /** Coalesced loading/navigation state pushed to JS as one onLoadingChange. */
   private class LoadState {
@@ -240,6 +265,7 @@ class GeckoViewManager : SimpleViewManager<GeckoView>() {
     private const val EVENT_LOADING = "topLoadingChange"
     private const val EVENT_ERROR = "topLoadError"
     private const val EVENT_TITLE = "topTitleChange"
+    private const val EVENT_BLOCKED = "topBlocked"
 
     // Maps each managed view to its last-loaded URL to de-dupe prop-driven loads.
     private val lastUrl = java.util.WeakHashMap<GeckoView, String>()

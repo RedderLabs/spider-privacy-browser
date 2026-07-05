@@ -1,6 +1,7 @@
 package com.spiderprivacybrowser.gecko
 
 import android.content.Context
+import android.util.Log
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
@@ -49,6 +50,26 @@ object GeckoRuntimeProvider {
             .configFilePath("")
             .build()
 
-    return GeckoRuntime.create(context, settings)
+    return GeckoRuntime.create(context, settings).also(::installHardeningExtension)
   }
+
+  /**
+   * Installs the built-in privacy WebExtension (generated from @spider/privacy-js by
+   * scripts/gen-gecko-privacy-ext.js). Its content script runs at document_start in
+   * world:"MAIN", so the fingerprint-hardening shims patch each page's own context —
+   * the GeckoView equivalent of react-native-webview's
+   * injectedJavaScriptBeforeContentLoaded. Tracker blocking is NOT done here (native
+   * ETP STRICT covers it); this extension only carries the anti-fingerprinting layer.
+   */
+  private fun installHardeningExtension(runtime: GeckoRuntime) {
+    runtime.webExtensionController
+        .ensureBuiltIn("resource://android/assets/privacy-ext/", HARDENING_EXT_ID)
+        .accept(
+            { ext -> Log.i(TAG, "privacy hardening extension installed: ${ext?.id}") },
+            { e -> Log.w(TAG, "privacy hardening extension failed to install", e) },
+        )
+  }
+
+  private const val TAG = "GeckoHardening"
+  private const val HARDENING_EXT_ID = "spider-hardening@spider.privacy"
 }

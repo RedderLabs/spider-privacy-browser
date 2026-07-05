@@ -18,6 +18,7 @@ interface LocationEvent { url: string }
 interface LoadingEvent { loading: boolean; canGoBack: boolean; canGoForward: boolean; progress: number }
 interface ErrorEvent { url?: string; code: number; category: number }
 interface TitleEvent { title: string }
+interface BlockedEvent { domain?: string }
 
 interface NativeGeckoProps {
   url: string;
@@ -26,6 +27,7 @@ interface NativeGeckoProps {
   onLoadingChange?: (e: NativeSyntheticEvent<LoadingEvent>) => void;
   onLoadError?: (e: NativeSyntheticEvent<ErrorEvent>) => void;
   onTitleChange?: (e: NativeSyntheticEvent<TitleEvent>) => void;
+  onBlocked?: (e: NativeSyntheticEvent<BlockedEvent>) => void;
 }
 
 // RNTGeckoView is a legacy SimpleViewManager rendered under Fabric via the
@@ -51,13 +53,13 @@ const RNTGeckoView: HostComponent<NativeGeckoProps> =
  * behind the GECKOVIEW_ENABLED flag (see BrowserEngine).
  *
  * Tracking protection is enforced at the engine level (STRICT ETP in
- * GeckoRuntimeProvider), so there is no in-page request blocker here. JS bundle
- * injection and the per-tab tracker counter (onMessage/onBlocked) are wired in a
- * follow-up increment via a bundled WebExtension; those props are accepted now
- * but not yet emitted.
+ * GeckoRuntimeProvider) and reported via the native onContentBlocked delegate
+ * (onBlocked). Fingerprint hardening is injected at document_start by the built-in
+ * privacy WebExtension (assets/privacy-ext, generated from @spider/privacy-js), so
+ * there is no in-page JS injection here.
  */
 export const GeckoWebView = forwardRef<HardenedWebViewHandle, HardenedWebViewProps>(
-  ({ url, onNavigationStateChange, onLoadError, onLoadStart, style }, ref) => {
+  ({ url, onNavigationStateChange, onLoadError, onLoadStart, onBlocked, style }, ref) => {
     const nativeRef = useRef<React.ComponentRef<typeof RNTGeckoView>>(null);
     // Coalesced navigation snapshot rebuilt from the native events, shaped like
     // react-native-webview's WebViewNavigation for the shared consumer.
@@ -124,6 +126,7 @@ export const GeckoWebView = forwardRef<HardenedWebViewHandle, HardenedWebViewPro
             description: `gecko error (category ${e.nativeEvent.category})`,
           });
         }}
+        onBlocked={(e) => onBlocked?.(e.nativeEvent.domain)}
       />
     );
   }
