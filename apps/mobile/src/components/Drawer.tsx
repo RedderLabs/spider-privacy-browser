@@ -16,6 +16,7 @@ import {
   Modal,
   Animated,
   Pressable,
+  ScrollView,
   TouchableOpacity,
   Switch,
   Dimensions,
@@ -94,14 +95,20 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
   const strengthLabel = privacyScore >= 80 ? t('scoreStrong') : privacyScore >= 50 ? t('scoreMedium') : t('scoreWeak');
 
   return (
-    <Modal transparent visible={mounted} animationType="none" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={mounted}
+      animationType="none"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}>
       <View style={styles.root}>
         <Animated.View
           style={[
             styles.panel,
             { width: WIDTH, paddingTop: insets.top + 20, transform: [{ translateX: tx }] },
           ]}>
-          {/* Brand header */}
+          {/* Brand header (fixed) */}
           <View style={styles.brand}>
             <Image source={require('../../logo.png')} style={[styles.logo, logoSize]} resizeMode="contain" />
             <Text style={styles.wordmark}>
@@ -110,6 +117,12 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
             <Text style={styles.tagline}>{t('homeTagline')}</Text>
           </View>
 
+          {/* Middle content scrolls so it adapts to any screen height and never
+              pushes the footer (version) off-screen or under the gesture bar. */}
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}>
           {/* Quick actions */}
           <TouchableOpacity style={styles.item} activeOpacity={0.7} onPress={onNewTab}>
             <View style={styles.itemIcon}>
@@ -184,8 +197,10 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
             </View>
             <Text style={styles.scoreNumber}>{privacyScore}</Text>
           </TouchableOpacity>
+          </ScrollView>
 
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+          {/* Footer (fixed at bottom, clears the system gesture bar) */}
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 16 }]}>
             <Text style={styles.footerText}>{t('drawerFooter')}</Text>
             <Text style={styles.version}>Spider Privacy · v{APP_VERSION}</Text>
           </View>
@@ -256,7 +271,9 @@ const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
   scoreStrength: { fontSize: 11, color: colors.muted, marginTop: 2 },
   scoreNumber: { fontSize: 30, fontWeight: '800', color: colors.primary },
 
-  footer: { marginTop: 'auto', paddingBottom: 28 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 8 },
+  footer: { paddingTop: 12, borderTopWidth: 1, borderTopColor: surfaces.divider },
   footerText: { fontSize: 11, color: colors.faint, lineHeight: 16 },
   version: { fontSize: 10, color: colors.faint, marginTop: 8 },
 });
