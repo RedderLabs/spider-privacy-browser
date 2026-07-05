@@ -131,11 +131,17 @@ Objetivo: terminar la migración iniciada. Los paquetes ya son workspaces; falta
 
 Objetivo: reemplazar `react-native-webview` (que en Android es el System WebView) por GeckoView, que da Enhanced Tracking Protection y anti-fingerprinting a nivel de motor.
 
-- [ ] Añadir dependencia `org.mozilla.geckoview:geckoview-default`.
-- [ ] Crear `GeckoViewModule.kt` (init de `GeckoRuntime` con `ContentBlocking` STRICT + FINGERPRINTING + CRYPTOMINING).
-- [ ] Puente RN + `ViewManager` para renderizar GeckoView desde JS.
-- [ ] Portar la inyección de `@spider/privacy-js` al ciclo de vida de GeckoView.
-- [ ] Definir qué defensas del bundle JS son redundantes con las nativas de Gecko.
+- [x] Añadir dependencia `org.mozilla.geckoview:geckoview`.
+- [x] `GeckoRuntimeProvider.kt` (init de `GeckoRuntime` con ETP `STRICT` + `AntiTracking.STRICT`, que incluye FINGERPRINTING + CRYPTOMINING).
+- [x] Puente RN + `ViewManager` para renderizar GeckoView desde JS (render verificado en API 34).
+- [x] Portar la inyección de `@spider/privacy-js` al ciclo de vida de GeckoView (WebExtension `world:MAIN`; spoofing verificado en browserleaks).
+- [x] Definir qué defensas del bundle JS son redundantes con las nativas de Gecko (solo el blocker de peticiones; ver `docs/GECKOVIEW.md`).
+
+**Estado:** implementación completa y verificada (rama `feat/gecko-engine`, flag
+`GECKOVIEW_ENABLED` OFF). **BLOQUEADO para publicar activado por el tamaño:** con
+ABI splits el release por-ABI es ~89–101 MB (arm64 92 MB), por encima del
+presupuesto de 80 MB/dispositivo. Se queda como motor opcional/experimental; el
+build por defecto (WebView, ~21 MB) sí cumple. Detalles en `docs/GECKOVIEW.md`.
 
 ---
 
