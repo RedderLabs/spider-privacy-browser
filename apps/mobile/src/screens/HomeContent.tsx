@@ -5,11 +5,13 @@
 // lock in its enclosing circle, tagline, and an honest private-network pill
 // (reflects the SELECTED transport, not a verified tunnel — Phase 5).
 //
-// Responsive: the whole column lives in a centered ScrollView so it never clips
-// on short/small screens (it scrolls instead), is capped to contentMaxWidth so it
-// doesn't stretch on tablets, and the hero/logo/type scale with the device.
+// Responsive: the whole column is a centered flex layout that ADAPTS to the
+// available space (never scrolls). It measures its own height (onLayout) and
+// scales the hero to fit, hiding it when vertical room is tight, so the primary
+// controls always fit on any device size/resolution. Capped to contentMaxWidth
+// so it doesn't stretch on tablets; hero/logo/type scale with the device.
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useSettingsStore } from '../store/settingsStore';
 import { useT } from '../i18n';
 import { alpha, type Palette, type Surfaces } from '../theme/theme';
@@ -34,6 +36,9 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
   const { colors, surfaces } = useTheme();
   const styles = React.useMemo(() => makeStyles(colors, surfaces), [colors, surfaces]);
   const [query, setQuery] = useState('');
+  // Actual height this content is given (screen minus header/toolbar/safe areas),
+  // measured so the hero can be sized to fit instead of overflowing into a scroll.
+  const [avail, setAvail] = useState(0);
 
   const submit = () => {
     const q = query.trim();
@@ -54,23 +59,23 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
 
   // Scale the hero proportionally, then derive every ring/lock dimension from a
   // single ratio so the padlock keeps its exact proportions at any size.
-  // Phone landscape (short height): compact the hero so the search bar — the
-  // screen's primary control — stays visible without needing to scroll.
-  const compact = r.width > r.height && !r.isTablet;
-  const heroSize = compact
-    ? Math.round(Math.min(r.height * 0.4, r.moderateScale(RING, 0.4)))
-    : r.moderateScale(RING, 0.4);
+  // The hero is the biggest, most flexible element, so it absorbs the fit: it is
+  // capped to a share of the AVAILABLE height (measured), and hidden entirely
+  // when there isn't enough room (short landscape or small screens) so the fixed
+  // controls — logo, search bar, tagline, network pill — always fit without scroll.
+  const availH = avail || r.height;
+  const landscape = r.width > r.height && !r.isTablet;
+  const compact = landscape || availH < 560;
+  const heroSize = Math.round(Math.min(r.moderateScale(RING, 0.4), availH * 0.34));
   const k = heroSize / RING;
   const px = (n: number) => Math.round(n * k);
   const logoW = compact ? r.font(62) : r.moderateScale(164, 0.4);
   const logoH = compact ? r.font(50) : r.moderateScale(132, 0.4);
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={[styles.scrollContent, compact && styles.scrollContentCompact]}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}>
+    <View
+      style={[styles.container, compact && styles.containerCompact]}
+      onLayout={(e) => setAvail(e.nativeEvent.layout.height)}>
       <View style={[styles.inner, { maxWidth: r.contentMaxWidth }]}>
         {/* Brand: spider-shield logo + wordmark */}
         <Image source={require('../../logo.png')} style={{ width: logoW, height: logoH, marginBottom: 6 }} resizeMode="contain" />
@@ -163,20 +168,24 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
         </TouchableOpacity>
         {!compact && <Text style={[styles.netHint, { fontSize: r.font(11) }]}>{t('netTapHint')}</Text>}
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
 const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
-  scrollContent: {
-    flexGrow: 1,
+  // Flex container that fills the space it's given and centres the column. No
+  // ScrollView: the hero scales to `avail` so everything fits; overflow is
+  // clipped as a last resort rather than introducing a scroll.
+  container: {
+    flex: 1,
+    backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingVertical: 24,
+    overflow: 'hidden',
   },
-  scrollContentCompact: { paddingVertical: 14, justifyContent: 'flex-start' },
+  containerCompact: { paddingVertical: 12 },
   inner: { width: '100%', alignItems: 'center' },
 
   // Phone-landscape (compact) overrides: tighter hero so the search bar fits.
