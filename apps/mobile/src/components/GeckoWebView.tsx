@@ -1,4 +1,4 @@
-import React, { useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
+import React, { useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from 'react';
 import {
   requireNativeComponent,
   UIManager,
@@ -49,12 +49,20 @@ export const GeckoWebView = forwardRef<HardenedWebViewHandle, HardenedWebViewPro
     // react-native-webview's WebViewNavigation for the shared consumer.
     const nav = useRef<Partial<WebViewNavigation>>({ url, canGoBack: false, canGoForward: false });
 
-    const dispatch = useCallback((command: string) => {
+    const dispatch = useCallback((command: string, args: unknown[] = []) => {
       const node = findNodeHandle(nativeRef.current);
       if (node != null) {
-        UIManager.dispatchViewManagerCommand(node, command, []);
+        UIManager.dispatchViewManagerCommand(node, command, args);
       }
     }, []);
+
+    // Drive navigation imperatively: the `url` prop is unreliable under the New
+    // Arch interop layer, so load via a command whenever the URL changes.
+    useEffect(() => {
+      if (url) {
+        dispatch('loadUrl', [url]);
+      }
+    }, [url, dispatch]);
 
     useImperativeHandle(ref, () => ({
       goBack: () => dispatch('goBack'),

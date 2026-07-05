@@ -120,6 +120,16 @@ class GeckoViewManager : SimpleViewManager<GeckoView>() {
 
   override fun receiveCommand(view: GeckoView, commandId: String, args: ReadableArray?) {
     when (commandId) {
+      // Primary navigation path: the `url` @ReactProp is unreliable under the New
+      // Arch interop layer ("could not find generated setter"), so JS drives loads
+      // imperatively via this command instead.
+      CMD_LOAD_URL -> {
+        val url = args?.takeIf { it.size() > 0 }?.getString(0)
+        if (!url.isNullOrEmpty() && url != lastUrl[view]) {
+          lastUrl[view] = url
+          view.session?.loadUri(url)
+        }
+      }
       CMD_GO_BACK -> view.session?.goBack()
       CMD_GO_FORWARD -> view.session?.goForward()
       CMD_RELOAD -> view.session?.reload()
@@ -181,6 +191,7 @@ class GeckoViewManager : SimpleViewManager<GeckoView>() {
   companion object {
     private const val REACT_CLASS = "RNTGeckoView"
 
+    private const val CMD_LOAD_URL = "loadUrl"
     private const val CMD_GO_BACK = "goBack"
     private const val CMD_GO_FORWARD = "goForward"
     private const val CMD_RELOAD = "reload"
