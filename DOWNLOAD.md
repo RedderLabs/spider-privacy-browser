@@ -4,8 +4,8 @@ APKs para Android (instalación directa / sideload). Los enlaces apuntan siempre
 la **última versión** publicada en GitHub Releases, así que no cambian entre
 actualizaciones.
 
-> Los enlaces se activan al publicar la primera release. Mientras tanto puedes ver
-> todas las versiones en la [página de releases](https://github.com/RedderLabs/spider-privacy-browser/releases).
+> ¿Prefieres elegir a mano? Todas las versiones están en la
+> [página de releases](https://github.com/RedderLabs/spider-privacy-browser/releases).
 
 ## ¿Qué edición elijo?
 
