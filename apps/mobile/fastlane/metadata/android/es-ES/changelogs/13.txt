@@ -1,0 +1,2 @@
+* Dos ediciones: la versión estándar mantiene el motor WebView ligero; ya hay una edición GeckoView aparte con protección antirrastreo a nivel de motor.
+* Base para descargar los APK de cada versión.

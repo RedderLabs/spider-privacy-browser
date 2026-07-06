@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { Platform } from 'react-native';
+import { Platform, UIManager } from 'react-native';
 import {
   HardenedWebView,
   HardenedWebViewHandle,
@@ -8,15 +8,22 @@ import {
 import { GeckoWebView } from './GeckoWebView';
 import { FEATURES } from '../config/env';
 
-// GeckoView is Android-only and experimental (Phase 4). It is chosen only when
-// the build flag is on AND we're on Android; everything else keeps the hardened
-// react-native-webview engine. Both expose the same HardenedWebViewHandle/props,
-// so the consumer (BrowserScreen) is engine-agnostic.
-const useGecko = FEATURES.geckoView && Platform.OS === 'android';
+// Two editions are built from this one codebase (Android product flavors, see
+// docs/GECKOVIEW.md): `standard` ships the system WebView only, `gecko` also
+// compiles in GeckoView. The engine is therefore chosen by what the build
+// actually contains — we detect the native RNTGeckoView view manager at runtime
+// rather than trusting a flag, so the same JS bundle is correct in both editions.
+// FEATURES.geckoView remains as a dev kill-switch (set GECKOVIEW_ENABLED=false to
+// force the WebView even in a gecko build). Both engines expose the same
+// HardenedWebViewHandle/props, so the consumer (BrowserScreen) is engine-agnostic.
+const geckoCompiledIn =
+  Platform.OS === 'android' && !!UIManager.hasViewManagerConfig?.('RNTGeckoView');
+const useGecko = geckoCompiledIn && FEATURES.geckoView;
 
 /**
- * Engine-agnostic browser view: renders either the GeckoView engine or the
- * hardened WebView, selected once at module load by the GECKOVIEW_ENABLED flag.
+ * Engine-agnostic browser view: renders either the GeckoView engine (gecko
+ * edition) or the hardened WebView (standard edition), selected once at module
+ * load from the compiled-in native engine.
  */
 export const BrowserEngine = forwardRef<HardenedWebViewHandle, HardenedWebViewProps>(
   (props, ref) =>

@@ -24,10 +24,13 @@ export const FEATURES = {
   // Master BUILD switch for tracker request blocking (in-page blocker + the
   // navigation blocklist in HardenedWebView).
   contentBlocking: flag(CONTENT_BLOCKING_ENABLED, true),
-  // Opt-IN switch for the experimental GeckoView engine (Android-only, Phase 4).
-  // Default OFF — the app renders via react-native-webview until GeckoView
-  // reaches feature parity (JS injection, message bridge, tracker counter).
-  geckoView: flag(GECKOVIEW_ENABLED, false),
+  // Dev kill-switch for the GeckoView engine. The engine is really selected by
+  // the build FLAVOR (standard = WebView, gecko = GeckoView; see BrowserEngine's
+  // runtime native detection and docs/GECKOVIEW.md), not by this flag — the same
+  // JS bundle ships in both editions. This only lets a developer FORCE the WebView
+  // even in a gecko build by setting GECKOVIEW_ENABLED=false. Default true = "use
+  // GeckoView if this build compiled it in".
+  geckoView: flag(GECKOVIEW_ENABLED, true),
 } as const;
 
 // Default encrypted-DNS provider id used to seed settingsStore.dohProvider.

@@ -1,0 +1,2 @@
+* Two editions: the standard build keeps the lightweight WebView engine; a separate GeckoView edition is now available for stronger, engine-level tracking protection.
+* Groundwork for downloadable release APKs.

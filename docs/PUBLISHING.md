@@ -19,11 +19,21 @@ needs a real upload key:
 2. Copy `apps/mobile/android/keystore.properties.example` to
    `apps/mobile/android/keystore.properties` (gitignored) and fill in the
    passwords/alias.
-3. Build:
-   - APK (F-Droid tests against source, but useful locally): `cd apps/mobile/android && ./gradlew assembleRelease`
-   - AAB (Google Play): `cd apps/mobile/android && ./gradlew bundleRelease` → `apps/mobile/android/app/build/outputs/bundle/release/`
+3. Build. The app has two editions (Android product flavors — see
+   `docs/GECKOVIEW.md`): `standard` (system WebView, ~21 MB) and `gecko` (bundles
+   GeckoView, ~92 MB/ABI). Use the flavored Gradle tasks:
+   - Standard APKs (per-ABI, F-Droid / local): `cd apps/mobile/android && ./gradlew assembleStandardRelease`
+   - Standard AAB (Google Play): `cd apps/mobile/android && ./gradlew bundleStandardRelease` → `apps/mobile/android/app/build/outputs/bundle/standardRelease/`
+   - GeckoView APKs (per-ABI, F-Droid / direct APK only — exceeds the 80 MB budget,
+     do NOT ship on Play): `cd apps/mobile/android && ./gradlew assembleGeckoRelease`
 
 Never commit the keystore or `keystore.properties`.
+
+> **Which edition goes where:** the `standard` edition is the default and ships to
+> both Google Play (AAB) and F-Droid. The `gecko` edition is a separate package
+> (`com.spiderprivacybrowser.gecko`, label "Spider (Gecko)") distributed only
+> off-Play (F-Droid / direct APK download), because ~92 MB/device is above the
+> 80 MB budget on purpose. Both can be installed side by side.
 
 ## F-Droid
 

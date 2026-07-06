@@ -6,11 +6,16 @@ System WebView, es decir Chromium del fabricante). Da protección de privacidad 
 nivel de **motor**: Enhanced Tracking Protection y aislamiento de cookies que el
 System WebView no expone.
 
-Es **opt-in** y va detrás del flag de build `GECKOVIEW_ENABLED` (default **OFF**,
-ver `apps/mobile/.env`). Con el flag apagado la app usa el motor WebView endurecido
-de siempre y GeckoView ni se referencia desde JS.
+Se distribuye como una **edición aparte** (ver "Dos ediciones" abajo): el build
+por defecto (`standard`) no enlaza GeckoView y la edición `gecko` sí. La selección
+del motor es automática según lo que el build contenga, así que el mismo bundle JS
+sirve para ambas.
 
-- Selección de motor: `src/components/BrowserEngine.tsx` (`useGecko = FEATURES.geckoView && Android`).
+- Selección de motor: `src/components/BrowserEngine.tsx` — detecta en runtime si el
+  view manager nativo `RNTGeckoView` está compilado
+  (`UIManager.hasViewManagerConfig`); si lo está usa GeckoView, si no, el WebView.
+  `GECKOVIEW_ENABLED` queda como kill-switch de desarrollo (ponerlo `false` fuerza
+  el WebView incluso en un build `gecko`).
 - Runtime: `android/.../gecko/GeckoRuntimeProvider.kt` (singleton por proceso).
 - Vista: `android/.../gecko/GeckoViewManager.kt` + JS `src/components/GeckoWebView.tsx`.
 
@@ -100,11 +105,48 @@ Qué defensas del bundle JS son redundantes con lo que Gecko ya hace, y cuáles 
 
   El `lib/` comprimido de arm64 ya son 68.7 MB (libxul domina), así que **ni con
   splits ni con minify se baja de 80 MB** — GeckoView es ~90 MB/dispositivo por
-  naturaleza (rango Firefox Focus). **Conclusión:** con la regla de "la app nunca
-  supera 80 MB por dispositivo", **GeckoView no se puede publicar activado**. Por eso
-  se queda OFF/experimental: el build por defecto (motor WebView) pesa ~21 MB y sí
-  cumple. Para shippearlo habría que (a) relajar el presupuesto para una edición
-  "GeckoView" aparte, o (b) esperar un GeckoView más ligero. Ver `docs/PUBLISHING.md`.
+  naturaleza (rango Firefox Focus). **Solución adoptada: dos ediciones** (abajo). La
+  regla de los 80 MB aplica al build por defecto (`standard`, ~21 MB, va a Play +
+  F-Droid); la edición `gecko` supera el presupuesto a propósito y se distribuye
+  **fuera de Play** (F-Droid / APK directo) como paquete aparte que el usuario elige.
+
+## Dos ediciones (product flavors)
+
+Un mismo código produce dos APKs mediante *product flavors* de Android
+(dimensión `engine`):
+
+| Flavor | Motor | Tamaño | Canal | Regla 80 MB |
+| --- | --- | --- | --- | --- |
+| `standard` (por defecto) | System WebView | ~21 MB | Google Play + F-Droid | ✅ cumple |
+| `gecko` | GeckoView | ~92 MB/ABI | F-Droid / APK directo (fuera de Play) | ❌ a propósito |
+
+Cómo está montado:
+
+- **Dependencia condicional:** GeckoView es `geckoImplementation(...)` en
+  `app/build.gradle`, así que **solo el flavor `gecko` la enlaza**; el `standard` ni
+  la descarga.
+- **Código nativo por flavor:** el Kotlin de Gecko vive en `src/gecko/java/...`
+  (compilado solo para ese flavor) y sus assets en `src/gecko/assets/privacy-ext/`.
+  Un shim `engine/EnginePackages.kt` existe en ambos source sets (`src/standard` y
+  `src/gecko`): registra `GeckoViewPackage` solo en `gecko`. `MainApplication` (en
+  `src/main`) llama a `EnginePackages.extraPackages()` sin depender de clases Gecko.
+- **JS agnóstico:** `BrowserEngine` detecta el motor compilado en runtime (ver
+  arriba), así que el bundle es idéntico en ambas ediciones.
+- **Paquete distinto:** el flavor `gecko` usa `applicationIdSuffix ".gecko"` y la
+  etiqueta "Spider (Gecko)", de modo que ambas ediciones conviven instaladas.
+
+Builds:
+
+```
+# Edición estándar (WebView, ~21 MB) — Play + F-Droid
+cd apps/mobile/android && ./gradlew assembleStandardRelease   # APKs por ABI
+cd apps/mobile/android && ./gradlew bundleStandardRelease      # AAB para Play
+
+# Edición GeckoView (~92 MB/ABI) — F-Droid / APK directo
+cd apps/mobile/android && ./gradlew assembleGeckoRelease
+```
+
+Ver `docs/PUBLISHING.md` para firmado y distribución.
 - **Cosmético del render.** El `SurfaceView` del compositor se ordena sobre la
   ventana (`setZOrderOnTop`) para ser visible sobre el fondo opaco del contenedor;
   como efecto, no respeta el `borderRadius` del contenedor (esquinas cuadradas) y

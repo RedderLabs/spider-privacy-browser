@@ -1,7 +1,8 @@
 /**
  * Generates the GeckoView privacy WebExtension from @spider/privacy-js — the SAME
  * single source of truth the react-native-webview engine injects. Output lives in
- * android/app/src/main/assets/privacy-ext/ and is committed; re-run this whenever
+ * android/app/src/gecko/assets/privacy-ext/ (the `gecko` product-flavor source set,
+ * so only the GeckoView edition ships it) and is committed; re-run this whenever
  * @spider/privacy-js changes (npm run gen:gecko-ext).
  *
  * Why an extension: GeckoView has no injectedJavaScriptBeforeContentLoaded. The
@@ -19,7 +20,7 @@ const os = require('os');
 const ts = require('typescript');
 
 const PKG_SRC = path.resolve(__dirname, '../../../packages/privacy-js/src');
-const OUT_DIR = path.resolve(__dirname, '../android/app/src/main/assets/privacy-ext');
+const OUT_DIR = path.resolve(__dirname, '../android/app/src/gecko/assets/privacy-ext');
 const EXT_ID = 'spider-hardening@spider.privacy';
 
 // Transpile every .ts in the package to CommonJS in a temp dir, preserving names

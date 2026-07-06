@@ -2,6 +2,7 @@ import React, { useRef, useImperativeHandle, forwardRef, useCallback, useEffect 
 import {
   requireNativeComponent,
   UIManager,
+  Platform,
   findNodeHandle,
   NativeSyntheticEvent,
   HostComponent,
@@ -42,10 +43,20 @@ interface NativeGeckoProps {
 const globalCache = globalThis as unknown as {
   __RNTGeckoView__?: HostComponent<NativeGeckoProps>;
 };
-const RNTGeckoView: HostComponent<NativeGeckoProps> =
-  globalCache.__RNTGeckoView__ ??
-  (globalCache.__RNTGeckoView__ =
-    requireNativeComponent<NativeGeckoProps>('RNTGeckoView'));
+
+// This module is in the shared JS bundle used by BOTH editions, but RNTGeckoView
+// is only registered natively in the `gecko` product flavor. Calling
+// requireNativeComponent for an unregistered view would warn/fail at import in the
+// `standard` edition, so we resolve it only when the native view manager exists.
+// BrowserEngine never renders this component unless the same check passed, so
+// RNTGeckoView is non-null wherever it is actually used.
+const geckoViewRegistered =
+  Platform.OS === 'android' && !!UIManager.hasViewManagerConfig?.('RNTGeckoView');
+const RNTGeckoView: HostComponent<NativeGeckoProps> | null = geckoViewRegistered
+  ? globalCache.__RNTGeckoView__ ??
+    (globalCache.__RNTGeckoView__ =
+      requireNativeComponent<NativeGeckoProps>('RNTGeckoView'))
+  : null;
 
 /**
  * GeckoView-backed engine (Android, Phase 4) with the SAME imperative handle and
@@ -60,7 +71,7 @@ const RNTGeckoView: HostComponent<NativeGeckoProps> =
  */
 export const GeckoWebView = forwardRef<HardenedWebViewHandle, HardenedWebViewProps>(
   ({ url, onNavigationStateChange, onLoadError, onLoadStart, onBlocked, style }, ref) => {
-    const nativeRef = useRef<React.ComponentRef<typeof RNTGeckoView>>(null);
+    const nativeRef = useRef<React.ComponentRef<HostComponent<NativeGeckoProps>>>(null);
     // Coalesced navigation snapshot rebuilt from the native events, shaped like
     // react-native-webview's WebViewNavigation for the shared consumer.
     const nav = useRef<Partial<WebViewNavigation>>({ url, canGoBack: false, canGoForward: false });
@@ -87,6 +98,12 @@ export const GeckoWebView = forwardRef<HardenedWebViewHandle, HardenedWebViewPro
     }));
 
     const pushNav = () => onNavigationStateChange?.(nav.current as WebViewNavigation);
+
+    // Unreachable in the standard edition (BrowserEngine only mounts this when the
+    // native view is registered); keeps the shared-bundle module type-safe.
+    if (!RNTGeckoView) {
+      return null;
+    }
 
     return (
       <RNTGeckoView

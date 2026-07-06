@@ -137,11 +137,14 @@ Objetivo: reemplazar `react-native-webview` (que en Android es el System WebView
 - [x] Portar la inyección de `@spider/privacy-js` al ciclo de vida de GeckoView (WebExtension `world:MAIN`; spoofing verificado en browserleaks).
 - [x] Definir qué defensas del bundle JS son redundantes con las nativas de Gecko (solo el blocker de peticiones; ver `docs/GECKOVIEW.md`).
 
-**Estado:** implementación completa y verificada (rama `feat/gecko-engine`, flag
-`GECKOVIEW_ENABLED` OFF). **BLOQUEADO para publicar activado por el tamaño:** con
-ABI splits el release por-ABI es ~89–101 MB (arm64 92 MB), por encima del
-presupuesto de 80 MB/dispositivo. Se queda como motor opcional/experimental; el
-build por defecto (WebView, ~21 MB) sí cumple. Detalles en `docs/GECKOVIEW.md`.
+**Estado:** implementación completa y verificada (rama `feat/gecko-engine`).
+**Resuelto como dos ediciones (product flavors):** el build `standard` (WebView,
+~21 MB) no enlaza GeckoView y va a Play + F-Droid (cumple los 80 MB); la edición
+`gecko` (~92 MB/ABI) enlaza el motor y se distribuye **fuera de Play** (F-Droid /
+APK directo) como paquete aparte (`applicationIdSuffix ".gecko"`) que el usuario
+elige. GeckoView es `geckoImplementation` (solo el flavor gecko paga el tamaño);
+el Kotlin de Gecko vive en `src/gecko/`. El motor se selecciona en runtime según
+lo compilado. Detalles y builds en `docs/GECKOVIEW.md`.
 
 ---
 

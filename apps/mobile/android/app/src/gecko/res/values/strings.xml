@@ -1,0 +1,6 @@
+<resources>
+    <!-- Launcher label for the GeckoView edition, so it's distinguishable from the
+         standard edition when both are installed (they use different package ids).
+         Flavor res overrides the same-named string in src/main/res. -->
+    <string name="app_name">Spider (Gecko)</string>
+</resources>
