@@ -68,11 +68,44 @@ F-Droid builds from source on their own infrastructure — you don't upload a bi
 - **Content rating:** complete the questionnaire (a browser is typically rated
   for the higher tiers because it shows arbitrary web content).
 
+## Downloadable APKs (GitHub Releases + Backblaze B2)
+
+Besides the stores, both editions are offered as direct APK downloads. The public
+links in `DOWNLOAD.md` point at **GitHub Releases** (permanent per-asset URLs:
+`…/releases/latest/download/<AssetName>`); the same files are mirrored to the
+shared **Backblaze B2** bucket `RedderLabs` (private) as an archive.
+
+One command does both — `scripts/publish-release.mjs` (Node, no deps; reusable
+across RedderLabs projects):
+
+```
+# 1. Build BOTH editions, all ABIs, signed with the RELEASE key (clean first so no
+#    stale APKs are picked up). Requires android/keystore.properties (see above).
+cd apps/mobile/android && ./gradlew clean \
+  assembleStandardRelease assembleGeckoRelease
+
+# 2. Publish: creates the GitHub Release + tag and uploads the 8 APKs as assets,
+#    then mirrors them to B2 under RedderLabs/spider-privacy-browser/<tag>/.
+cd ../../.. && npm run publish:release -- --tag v0.0.13
+#   --dry-run           preview matched APKs / asset names / targets, upload nothing
+#   --skip-b2           GitHub only        --skip-github   B2 mirror only
+```
+
+Requirements: `gh` CLI authenticated with `repo` scope; `.env.backblaze` at the
+repo root with the B2 key (gitignored — NEVER commit it). Asset names are
+normalized and stable (`Spider-<flavor>-<abi>.apk`) so the `DOWNLOAD.md` links
+never change between releases.
+
+> **Signing note:** publish downloadable APKs with the real release key, not the
+> debug fallback — an installed app can only be updated by a build signed with the
+> same key. Set up `android/keystore.properties` first (see above).
+
 ## Checklist per release
 
 - [ ] Bump `apps/mobile/src/version.ts` + `versionName`/`versionCode` in `apps/mobile/android/app/build.gradle`.
 - [ ] Add `apps/mobile/fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt`.
 - [ ] `npm test` and `npx tsc --noEmit` pass.
-- [ ] Build the signed AAB and smoke-test it on a device.
+- [ ] Build the signed AAB (`bundleStandardRelease`) and smoke-test it on a device.
 - [ ] Tag `vX.Y.Z` and push (F-Droid picks up the tag).
-- [ ] Upload the AAB to Play; roll out.
+- [ ] Upload the standard AAB to Play; roll out.
+- [ ] `npm run publish:release -- --tag vX.Y.Z` — GitHub Release (both editions, all ABIs) + B2 mirror.
