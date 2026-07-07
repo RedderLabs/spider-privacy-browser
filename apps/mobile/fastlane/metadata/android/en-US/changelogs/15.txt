@@ -1,0 +1,3 @@
+* Private network (Phase 5): the network selector is now fully functional.
+* Orbot (Tor): live tunnel status in the network chip (Connecting / Connected / Not connected), reflecting the real VPN state. Verified routing through Tor on-device.
+* WireGuard: new generic tunnel — import a standard .conf from Mullvad or any provider and connect. No account is embedded.

@@ -6,11 +6,14 @@
 import { Alert } from 'react-native';
 import { NETWORK_MODE_LIST, type NetworkModeId } from '@spider/network';
 import { useSettingsStore } from '../store/settingsStore';
+import { useNetworkStatusStore } from '../store/networkStatusStore';
 import { orbot } from '../native/orbot';
+import { wireguard } from '../native/wireguard';
 import { useT } from '../i18n';
 
 export function useNetworkSelect(onDone?: () => void) {
   const setNetworkMode = useSettingsStore(s => s.setNetworkMode);
+  const setWgSheetOpen = useNetworkStatusStore(s => s.setWgSheetOpen);
   const t = useT();
 
   return async (id: NetworkModeId): Promise<void> => {
@@ -19,6 +22,17 @@ export function useNetworkSelect(onDone?: () => void) {
 
     if (mode && !mode.available) {
       Alert.alert(mode.label, t('comingSoonBody'));
+      return;
+    }
+
+    // WireGuard: open the config/connect sheet instead of toggling directly.
+    // Needs a pasted config + VPN consent, handled there. Not supported on iOS.
+    if (id === 'mullvad') {
+      if (!wireguard.isSupported()) {
+        Alert.alert(mode?.label ?? 'WireGuard', t('comingSoonBody'));
+        return;
+      }
+      setWgSheetOpen(true);
       return;
     }
 
@@ -31,6 +45,8 @@ export function useNetworkSelect(onDone?: () => void) {
         ]);
         return; // don't switch to orbot mode until it's installed
       }
+      // Live status (Sin conectar → Conectado) is driven by the native VPN
+      // transport callback, so it stays correct even if Orbot was already up.
       setNetworkMode('orbot');
       if (started) {
         Alert.alert(t('orbotStartedTitle'), t('orbotStartedBody'));

@@ -8,11 +8,14 @@ import {SettingsScreen} from './src/screens/SettingsScreen';
 import {AboutScreen} from './src/screens/AboutScreen';
 import {Drawer} from './src/components/Drawer';
 import {NetworkSheet} from './src/components/NetworkSheet';
+import {WireGuardSheet} from './src/components/WireGuardSheet';
 import {ThemeProvider, useTheme} from './src/theme/ThemeContext';
 import {useSettingsStore} from './src/store/settingsStore';
 import {BLOCKED_HOSTS, WK_CONTENT_RULES_JSON} from '@spider/content-blocking';
 import {nativeBlocklist} from './src/native/nativeBlocklist';
 import {iosContentBlocker} from './src/native/iosContentBlocker';
+import {useOrbotStatus} from './src/hooks/useOrbotStatus';
+import {useWireguardStatus} from './src/hooks/useWireguardStatus';
 import {FEATURES} from './src/config/env';
 
 function App(): React.JSX.Element {
@@ -36,6 +39,10 @@ function AppInner(): React.JSX.Element {
   const [showDrawer, setShowDrawer] = React.useState(false);
   const [showNetwork, setShowNetwork] = React.useState(false);
   const hardeningEnabled = useSettingsStore(s => s.hardeningEnabled);
+
+  // Reflect the REAL tunnel state (Orbot Tor / WireGuard) in the network chip.
+  useOrbotStatus();
+  useWireguardStatus();
 
   // Native content blocking, fed once at startup from the @spider/content-blocking
   // pipeline (EasyList/AdGuard + curated seed) and toggled with the master shield.
@@ -173,6 +180,9 @@ function AppInner(): React.JSX.Element {
         />
 
         <NetworkSheet visible={showNetwork} onClose={() => setShowNetwork(false)} />
+        {/* Opened from the network selector when the user picks WireGuard;
+            visibility is driven by the networkStatusStore (wgSheetOpen). */}
+        <WireGuardSheet />
       </SafeAreaView>
     </>
   );

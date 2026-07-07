@@ -13,11 +13,15 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useSettingsStore } from '../store/settingsStore';
+import { useNetworkStatusStore } from '../store/networkStatusStore';
 import { useT } from '../i18n';
 import { alpha, type Palette, type Surfaces } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { useResponsive } from '../utils/responsive';
 import { ShieldCheckIcon, GlobeIcon } from '../components/icons';
+
+// Amber used for the transient "connecting…" tunnel state (reads on both themes).
+const CONNECTING = '#c2872b';
 
 // Base (guideline) hero geometry; scaled per-device at render time.
 const RING = 236;
@@ -31,6 +35,7 @@ interface HomeContentProps {
 
 export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavigate }) => {
   const networkMode = useSettingsStore((s) => s.networkMode);
+  const orbotStatus = useNetworkStatusStore((s) => s.orbotStatus);
   const t = useT();
   const r = useResponsive();
   const { colors, surfaces } = useTheme();
@@ -49,13 +54,18 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
   };
 
   const isPrivate = networkMode !== 'none';
+  // Live tunnel state, only meaningful while Orbot is the selected transport.
+  const connecting = networkMode === 'orbot' && orbotStatus === 'starting';
   // Brand names stay untranslated; 'none' uses a localized label.
-  const netLabel =
+  const baseLabel =
     networkMode === 'orbot'
       ? 'Orbot (Tor)'
       : networkMode === 'mullvad'
-      ? 'Mullvad WireGuard'
+      ? 'WireGuard'
       : t('netDirect');
+  // Append the real status while connecting so the pill is honest (selected ≠
+  // connected). Once ON it just shows the transport name in the "private" green.
+  const netLabel = connecting ? `${baseLabel} · ${t('netConnecting')}` : baseLabel;
 
   // Scale the hero proportionally, then derive every ring/lock dimension from a
   // single ratio so the padlock keeps its exact proportions at any size.
@@ -156,15 +166,27 @@ export const HomeContent: React.FC<HomeContentProps> = ({ onOpenNetwork, onNavig
 
         {/* Honest network status: shows the selected transport, taps to Settings */}
         <TouchableOpacity
-          style={[styles.netPill, isPrivate ? styles.netPillPrivate : styles.netPillDirect]}
+          style={[
+            styles.netPill,
+            isPrivate ? styles.netPillPrivate : styles.netPillDirect,
+            connecting && styles.netPillConnecting,
+          ]}
           onPress={onOpenNetwork}
           activeOpacity={0.75}>
           {isPrivate ? (
-            <ShieldCheckIcon size={16} color={colors.tertiary} bg="#0f1a12" />
+            <ShieldCheckIcon size={16} color={connecting ? CONNECTING : colors.tertiary} bg="#0f1a12" />
           ) : (
             <GlobeIcon size={16} color={colors.muted} />
           )}
-          <Text style={[styles.netText, { fontSize: r.font(14) }, isPrivate && styles.netTextPrivate]}>{netLabel}</Text>
+          <Text
+            style={[
+              styles.netText,
+              { fontSize: r.font(14) },
+              isPrivate && styles.netTextPrivate,
+              connecting && styles.netTextConnecting,
+            ]}>
+            {netLabel}
+          </Text>
         </TouchableOpacity>
         {!compact && <Text style={[styles.netHint, { fontSize: r.font(11) }]}>{t('netTapHint')}</Text>}
       </View>
@@ -254,7 +276,9 @@ const makeStyles = (colors: Palette, surfaces: Surfaces) => StyleSheet.create({
   },
   netPillPrivate: { borderColor: alpha(colors.tertiary, 0.35), backgroundColor: surfaces.emeraldTint },
   netPillDirect: { borderColor: surfaces.hairline, backgroundColor: surfaces.divider },
+  netPillConnecting: { borderColor: alpha(CONNECTING, 0.4), backgroundColor: alpha(CONNECTING, 0.12) },
   netText: { fontWeight: '700', color: colors.muted, letterSpacing: 0.3 },
   netTextPrivate: { color: colors.tertiary },
+  netTextConnecting: { color: CONNECTING },
   netHint: { color: colors.faint, marginTop: 8 },
 });

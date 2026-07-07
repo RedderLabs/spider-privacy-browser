@@ -16,6 +16,7 @@ import com.spiderprivacybrowser.dns.DnsVpnPackage
 import com.spiderprivacybrowser.engine.EnginePackages
 import com.spiderprivacybrowser.orbot.OrbotPackage
 import com.spiderprivacybrowser.privatedns.PrivateDnsPackage
+import com.spiderprivacybrowser.wireguard.WireGuardPackage
 
 class MainApplication : Application(), ReactApplication {
 
@@ -29,6 +30,7 @@ class MainApplication : Application(), ReactApplication {
               add(PrivateDnsPackage())
               add(DnsVpnPackage())
               add(NativeBlocklistPackage())
+              add(WireGuardPackage())
               // Engine-specific packages (GeckoView on the `gecko` flavor, none on
               // `standard`). Resolved per build flavor via src/<flavor>/.../engine.
               addAll(EnginePackages.extraPackages())

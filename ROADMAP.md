@@ -27,10 +27,10 @@ La app **funciona como shell de navegación** con hardening JS real, pero varias
 | i18n (ES/EN) | `[x]` | `src/i18n` (`useT` + translations), selector en Settings, persistido; todas las pantallas traducidas |
 | DNS cifrado (Private DNS/DoT) | `[x]` (A) ✔ verificado | Módulo nativo `PrivateDns`: estado real + abrir Ajustes + copiar host DoT al portapapeles. Verificado en emulador (API 37): refleja activo/off correctamente |
 | DNS cifrado (DoH in-app VPN) | `[x]` v2 ✔ verificado | `DnsVpnService` (solo-DNS, DoH vía OkHttp, anti-bucle); toggle en Settings. v2: IPv4+IPv6, UDP+TCP (fallback TC=1→TCP en `DnsTcp`), notificación foreground (special-use FGS), `stop()` real (cierra el tun fd). Setup en hilo de fondo (evita `NetworkOnMainThreadException`). Verificado en emulador (API 37): arranca/resuelve/detiene end-to-end |
-| Red privada (selector) | `[~]` | Selector unificado `Directa / Orbot (Tor) / Mullvad WireGuard` en `@spider/network` (`NETWORK_MODE_LIST`) |
-| Orbot (Tor) | `[~]` | Puente nativo `OrbotModule.kt` (detecta/lanza Orbot vía intent). Falta verificar en build nativo |
+| Red privada (selector) | `[x]` ✔ | Selector unificado `Directa / Orbot (Tor) / WireGuard` en `@spider/network` (`NETWORK_MODE_LIST`); las tres opciones funcionan (WireGuard vía import de config) |
+| Orbot (Tor) | `[x]` ✔ verificado | `OrbotModule.kt` (detecta/lanza + estado en vivo por transporte VPN). Verificado en dispositivo físico (Android 16): salida por Tor confirmada en `check.torproject.org` |
 | Excepciones por sitio | `[x]` | **Task 9 hecho**: override por dominio `off`/`strict` en `settingsStore` (`siteExceptions` + `resolveHardening`, persistido); precedencia sobre el master global; hoja por-sitio al tocar el badge de escudo; recarga al cambiar |
-| VPN WireGuard | `[ ]` | Mullvad WireGuard marcado "próximamente"; sin `VpnService` propio todavía |
+| VPN WireGuard | `[x]` code-complete | `WireGuardModule.kt` + `wireguard-android` GoBackend (VpnService real); importa un `.conf` genérico (Mullvad u otro). Parseo verificado en dispositivo; connect pendiente de un `.conf` real |
 | GeckoView | `[ ]` | No existe (solo `MainActivity`/`MainApplication` por defecto) |
 | Monorepo (mover app a `apps/mobile/`) | `[x]` ✔ (2026-07-05) | App RN movida a `apps/mobile/`; workspaces `apps/*`+`packages/*`; build Android verificado (BUILD SUCCESSFUL). iOS reescrito sin compilar (falta Mac) |
 | Persistencia (incógnito-puro) | `[x]` | **Solo el idioma** sobrevive al cierre/kill (`partialize`: `language`). Toggles, perfil, DoH, excepciones por-sitio, `networkMode` y pestañas se reinician a defaults en cada arranque. DNS VPN: `START_NOT_STICKY` + `onTaskRemoved` (no revive en segundo plano; batería) |
@@ -161,15 +161,17 @@ Objetivo: hacer real la sección "Red privada" (hoy un selector `Directa / Orbot
 - [x] Manifest: `<queries>` para visibilidad del paquete `org.torproject.android` (Android 11+).
 - [x] Wrapper JS `src/native/orbot.ts` (fallback a `Linking` en iOS / sin bridge).
 - [x] UI: selector "Red privada" en `SettingsScreen`; al elegir Orbot se lanza Tor o se ofrece instalarlo.
-- [ ] **Verificar en build nativo** (dispositivo con/sin Orbot): consentimiento VPN, arranque de Tor, y comprobar salida por Tor (p. ej. `check.torproject.org`).
-- [ ] **Estado en vivo**: escuchar el broadcast de estado de Orbot (`extra STATUS`: ON/OFF/STARTING) y reflejarlo en el badge de red (hoy el selector no lee el estado real de la VPN).
-- [ ] **iOS**: Orbot iOS no ofrece handoff app-a-app equivalente; evaluar `NEVPNManager`/perfil o dejar Tor como solo-Android.
+- [x] **Verificar en build nativo** ✔ (2026-07-07, OPPO CPH2747 / Android 16, edición gecko v0.0.14): Orbot detectado e instalado desde el flujo, consentimiento VPN, VPN de Tor device-wide, y salida por Tor confirmada por API (`{"IsTor":true}`) y visualmente en `check.torproject.org` ("Congratulations. This browser is configured to use Tor.").
+- [x] **Estado en vivo** ✔ (2026-07-07): reflejar el estado REAL del túnel en el chip/selector. Se probó el broadcast legacy de Orbot (`intent.action.STATUS`), pero **Orbot 17.x ya no lo emite a apps de terceros** — así que la señal fiable es la **detección del transporte VPN activo** vía `ConnectivityManager.NetworkCallback` (independiente de la versión de Orbot). `OrbotModule` emite `orbotStatus` → `networkStatusStore` → el chip muestra "Conectando…/Conectado/Sin conectar". Verificado en dispositivo (standard v0.0.15): la fila de Orbot pasa a "Conectado" con el túnel arriba y "Sin conectar" al caer.
+- [ ] **iOS**: Orbot iOS no ofrece handoff app-a-app equivalente; queda como **solo-Android** por ahora (evaluar `NEVPNManager`/perfil en el futuro, requiere Mac + entitlement).
 
-### 5b. Mullvad WireGuard (más adelante)
-- [ ] `VpnServiceModule.kt` extendiendo `android.net.VpnService`.
-- [ ] Integrar `wireguard-android` (túnel full: `0.0.0.0/0`, DNS Mullvad).
-- [ ] Conectar la opción `mullvad` del selector (hoy "próximamente") al servicio.
-- [ ] iOS: `NEPacketTunnelProvider` (Network Extension, requiere entitlement de pago).
+### 5b. WireGuard genérico (import de config) ✔ code-complete
+Decisión (2026-07-07): en vez de atar la app a la API de pago de Mullvad, se implementó un **túnel WireGuard genérico** que importa un `.conf` estándar (Mullvad o cualquier proveedor). La app no embebe ninguna cuenta.
+- [x] `wireguard-android` (`com.wireguard.android:tunnel`) integrado; su `GoBackend` aporta el `VpnService` real (declarado en el manifest con FGS special-use). +~1 MB en standard (12.8 MB, dentro de los 80).
+- [x] `WireGuardModule.kt` (+ `WireGuardPackage`, registrado en `MainApplication`): `importConfig` (parsea `Config.parse`), `connect` (consentimiento VPN vía `VpnService.prepare` + `startActivityForResult`), `disconnect`, `getStatus`; emite `wireguardState`. Backend en hilo de fondo.
+- [x] Wrapper JS `src/native/wireguard.ts` + `WireGuardSheet` (pegar `.conf` → importar/conectar/desconectar) + opción `mullvad` del selector cableada (abre la hoja vía `networkStatusStore.wgSheetOpen`). Relabelada a "WireGuard".
+- [x] **Verificado en dispositivo** (parcial, 2026-07-07): la hoja abre, el módulo nativo carga sin crash, y el parseo real de `Config.parse` funciona end-to-end (config inválida → excepción → alert "Configuración inválida"). **Pendiente de config real**: el `connect` (bring-up del túnel + salida por el túnel) no se ha ejercitado por falta de un `.conf` WireGuard válido.
+- [ ] iOS: `NEPacketTunnelProvider` (Network Extension, requiere Mac + entitlement de pago). **Solo-Android** por ahora.
 
 ---
 

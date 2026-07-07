@@ -135,8 +135,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bump both on every release. versionName must match src/version.ts
         // (the string shown in the Drawer/About); versionCode increments by 1.
-        versionCode 14
-        versionName "0.0.14"
+        versionCode 15
+        versionName "0.0.15"
     }
 
     // Two editions from one codebase (see docs/GECKOVIEW.md):
@@ -215,6 +215,13 @@ dependencies {
     // Used by the DNS-over-HTTPS VpnService (custom DNS resolver to avoid the
     // resolution loop). Same major version React Native already ships.
     implementation("com.squareup.okhttp3:okhttp:4.9.2")
+
+    // WireGuard userspace backend (Phase 5b): parses standard .conf files and
+    // runs a real tunnel via its own GoBackend VpnService. Generic — works with
+    // Mullvad or any provider's WireGuard config. Adds a small native lib
+    // (wireguard-go) per ABI; the standard edition stays well under the 80 MB
+    // budget. The official Guardian/WireGuard artifact from mavenCentral.
+    implementation("com.wireguard.android:tunnel:1.0.20230706")
 
     // GeckoView — Phase 4 browser engine (Mozilla's own renderer, engine-level
     // Enhanced Tracking Protection + anti-fingerprinting). `geckoImplementation`
