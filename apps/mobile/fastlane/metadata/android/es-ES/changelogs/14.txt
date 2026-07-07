@@ -1,0 +1,2 @@
+* Versión de mantenimiento. Mismas funciones que la 0.0.13, recompilada y firmada con la clave de publicación.
+* Dos ediciones disponibles: la estándar ligera (WebView) y la edición GeckoView aparte.

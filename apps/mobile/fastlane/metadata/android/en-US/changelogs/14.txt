@@ -1,0 +1,2 @@
+* Maintenance release. Same features as 0.0.13, rebuilt and re-signed with the release key.
+* Both editions available: lightweight standard (WebView) and the separate GeckoView build.
