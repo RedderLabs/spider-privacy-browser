@@ -1,0 +1,3 @@
+* Soporte de build para F-Droid: la edición estándar puede compilarse como un único APK universal para builds reproducibles en F-Droid.
+* main pasa a ser la rama canónica con la app actual completa (ambas ediciones + Fase 5).
+* Sin cambios visibles para el usuario respecto a 0.0.15.

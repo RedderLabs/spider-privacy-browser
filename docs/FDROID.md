@@ -15,7 +15,10 @@ A diferencia de Google Play, en F-Droid no se sube un binario: publicas el códi
 - Licencia FLOSS: AGPL-3.0-or-later (`LICENSE`).
 - Sin GMS/Firebase/analytics.
 - Metadata fastlane (textos, changelogs, icono, capturas) en `fastlane/metadata/android/{en-US,es-ES}/`.
-- Tag de release **`v0.0.4`** apuntando al commit con `versionName 0.0.4` / `versionCode 4`.
+- La app vive en `main` (rama canónica) con dos **product flavors**: `standard` (motor
+  WebView del sistema, ~28 MB universal — el que va a F-Droid) y `gecko` (GeckoView, ~92 MB/ABI,
+  fuera de Play/F-Droid por tamaño). F-Droid compila **solo el flavor `standard`**.
+- Tag de release **`v0.0.16`** apuntando al commit con `versionName 0.0.16` / `versionCode 16`.
 
 ## Paso 1 — Fork + clone de `fdroiddata`
 
@@ -45,9 +48,9 @@ RepoType: git
 Repo: https://github.com/RedderLabs/spider-privacy-browser.git
 
 Builds:
-  - versionName: 0.0.4
-    versionCode: 4
-    commit: v0.0.4
+  - versionName: 0.0.16
+    versionCode: 16
+    commit: v0.0.16
     subdir: apps/mobile/android/app
     sudo:
       - sysctl fs.inotify.max_user_watches=524288 || true
@@ -58,16 +61,18 @@ Builds:
     ndk: 27.1.12297006
     init:
       - cd ../../../.. && npm ci
+    prebuild:
+      - echo "fdroidUniversal=true" >> ../gradle.properties
     gradle:
-      - yes
-    output: build/outputs/apk/release/app-release-unsigned.apk
+      - standard
+    output: build/outputs/apk/standard/release/app-standard-release.apk
     scandelete:
       - node_modules
 
 AutoUpdateMode: Version v%v
 UpdateCheckMode: Tags
-CurrentVersion: 0.0.4
-CurrentVersionCode: 4
+CurrentVersion: 0.0.16
+CurrentVersionCode: 16
 ```
 
 Qué hace cada parte:
@@ -75,9 +80,11 @@ Qué hace cada parte:
 - **`sudo`**: instala Node como root (la imagen base de F-Droid no trae Node reciente). El `sha256sum -c` verifica el binario.
 - **`ndk`**: la versión que usa el proyecto (`apps/mobile/android/build.gradle`).
 - **`init`**: `npm ci` desde la raíz del repo (`cd ../../../..` porque `subdir` es `apps/mobile/android/app`). La app es un monorepo npm: la raíz instala los workspaces (`apps/*` + `packages/*`). Nota: los tags anteriores a la migración a monorepo (≤ `v0.0.7`) tenían la app en la raíz, así que un build de esos tags usaría `subdir: android/app` y `cd ../..`.
-- **`gradle: [yes]`**: `assembleRelease` sin product flavor.
+- **`prebuild`**: activa la propiedad `fdroidUniversal` (la escribe en `apps/mobile/android/gradle.properties`, un nivel por encima del `subdir`). Con ella, `app/build.gradle` **desactiva las ABI splits** y emite un único APK universal con las 4 ABIs y el `versionCode` base `16` (sin la propiedad, un build normal saca 4 APKs por-ABI con codes 151-154, que no encajan en una entrada `Builds` única).
+- **`gradle: [standard]`**: compila el flavor `standard` → `assembleStandardRelease`. NO se compila `gecko` (excede el presupuesto de tamaño; va solo por APK directa / GitHub Releases).
+- **`output`**: el APK universal del flavor standard. Verificado en local (`-PfdroidUniversal`): `app-standard-release.apk`, ~28 MB, `versionCode=16`, `native-code: arm64-v8a armeabi-v7a x86 x86_64`.
 - **`scandelete: node_modules`**: evita que el escáner de F-Droid recorra esa carpeta buscando binarios.
-- **No hay bloque `prebuild`**: no hace falta, la app ya es FOSS-limpia (nada de GMS/Firebase que quitar).
+- **No hay que quitar nada en `prebuild`**: la app ya es FOSS-limpia (nada de GMS/Firebase).
 
 ## Paso 3 — Validar en local
 

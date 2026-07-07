@@ -120,9 +120,16 @@ android {
     // own architecture. `universalApk false` disables the fat combined APK. Play
     // should ship an AAB (bundleRelease) instead, which does the same per-device
     // slicing automatically; splits keep F-Droid / sideload builds within budget.
+    //
+    // F-Droid override: a single Build entry expects ONE artifact whose versionCode
+    // matches the metadata. Building with `-PfdroidUniversal` disables splits so the
+    // standard flavor emits one universal `app-standard-release.apk` at the base
+    // versionCode (the per-ABI +N override below only fires when an ABI filter is
+    // present). The universal standard APK (~30 MB, WebView engine) fits F-Droid fine.
+    def fdroidUniversal = project.hasProperty("fdroidUniversal")
     splits {
         abi {
-            enable true
+            enable !fdroidUniversal
             reset()
             include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
             universalApk false
@@ -135,8 +142,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bump both on every release. versionName must match src/version.ts
         // (the string shown in the Drawer/About); versionCode increments by 1.
-        versionCode 15
-        versionName "0.0.15"
+        versionCode 16
+        versionName "0.0.16"
     }
 
     // Two editions from one codebase (see docs/GECKOVIEW.md):
