@@ -12,7 +12,8 @@ import {
   DeviceEventEmitter,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HardenedWebView, HardenedWebViewHandle, LoadErrorInfo } from '../components/HardenedWebView';
+import { HardenedWebViewHandle, LoadErrorInfo } from '../components/HardenedWebView';
+import { BrowserEngine } from '../components/BrowserEngine';
 import { HomeContent } from './HomeContent';
 import { useTabStore } from '../store/tabStore';
 import { useSettingsStore, normalizeDomain, SiteExceptionMode } from '../store/settingsStore';
@@ -253,7 +254,7 @@ export const BrowserScreen: React.FC<BrowserScreenProps> = ({
       {/* WebView principal */}
       <View ref={webShotRef} collapsable={false} style={styles.webviewContainer}>
         {activeTab && activeTab.url !== 'about:blank' ? (
-          <HardenedWebView
+          <BrowserEngine
             key={activeTab.id}
             ref={webViewRef}
             url={activeTab.url}

@@ -84,7 +84,7 @@ export const Drawer: React.FC<DrawerProps> = ({ visible, onClose, onOpenSettings
     settings.networkMode === 'orbot'
       ? 'Orbot (Tor)'
       : settings.networkMode === 'mullvad'
-      ? 'Mullvad WireGuard'
+      ? 'WireGuard'
       : t('netDirect');
 
   const privacyScore = [

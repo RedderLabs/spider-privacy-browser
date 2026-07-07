@@ -23,10 +23,11 @@ react {
     hermesCommand = file("../../../../node_modules/react-native/sdks/hermesc/%OS-BIN%/hermesc").toString()
 
     /* Variants */
-    //   The list of variants to that are debuggable. For those we're going to
-    //   skip the bundling of the JS bundle and the assets. By default is just 'debug'.
-    //   If you add flavors like lite, prod, etc. you'll have to list your debuggableVariants.
-    // debuggableVariants = ["liteDebug", "prodDebug"]
+    //   Debuggable variants skip JS-bundle/asset packaging (they load from Metro).
+    //   The default is just "debug", but this app has an `engine` flavor dimension
+    //   (standard/gecko), so the debug variants are named per-flavor and must be
+    //   listed explicitly — otherwise release-style bundling runs for debug too.
+    debuggableVariants = ["standardDebug", "geckoDebug"]
 
     /* Bundling */
     //   A list containing the node command and its flags. Default is just 'node'.
@@ -94,15 +95,74 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.spiderprivacybrowser"
+
+    // GeckoView requires Java 17 source/target compatibility.
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    // GeckoView's native loader (GeckoLoader.putenv) needs the .so files
+    // extracted to disk; the modern default (extractNativeLibs=false, libs read
+    // straight from the APK) makes it SIGSEGV at startup. Force legacy packaging.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    // Per-ABI APK splits. GeckoView embeds Firefox's engine (libxul.so ~150 MB
+    // uncompressed) once PER ABI; a universal APK bundling all four ABIs blows past
+    // the 80 MB budget. Splits emit one APK per ABI so each device only carries its
+    // own architecture. `universalApk false` disables the fat combined APK. Play
+    // should ship an AAB (bundleRelease) instead, which does the same per-device
+    // slicing automatically; splits keep F-Droid / sideload builds within budget.
+    splits {
+        abi {
+            enable true
+            reset()
+            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            universalApk false
+        }
+    }
+
     defaultConfig {
         applicationId "com.spiderprivacybrowser"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bump both on every release. versionName must match src/version.ts
         // (the string shown in the Drawer/About); versionCode increments by 1.
-        versionCode 12
-        versionName "0.0.12"
+        versionCode 15
+        versionName "0.0.15"
     }
+
+    // Two editions from one codebase (see docs/GECKOVIEW.md):
+    //   standard — system WebView engine. No GeckoView linked, ~21 MB. The default
+    //              build; ships to Google Play + F-Droid (fits the 80 MB budget).
+    //   gecko    — bundles GeckoView (Mozilla's engine, engine-level ETP +
+    //              anti-fingerprinting). ~92 MB/device, so it CANNOT ship on Play
+    //              and intentionally exceeds the 80 MB budget; distributed off-Play
+    //              (F-Droid / direct APK) as a separate package the user opts into.
+    // The GeckoView dependency is `geckoImplementation` (below), so only this
+    // flavor pays the size; the gecko-only Kotlin lives in src/gecko/.
+    flavorDimensions "engine"
+    productFlavors {
+        standard {
+            dimension "engine"
+            // Default edition — nothing to add; GeckoView simply isn't compiled in.
+        }
+        gecko {
+            dimension "engine"
+            // Separate package id so both editions can be listed/installed side by
+            // side (F-Droid variant pattern, cf. Fennec vs Mull).
+            applicationIdSuffix ".gecko"
+            versionNameSuffix "-gecko"
+        }
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -134,6 +194,20 @@ android {
     }
 }
 
+// Give each per-ABI split its own versionCode so an app store never sees two APKs
+// with the same code (Play/F-Droid reject that). Scheme: base*10 + abi-ordinal, so
+// versionName 0.0.11 (code 11) yields 111/112/113/114. Higher ordinal = preferred
+// on 64-bit devices. Not needed for AAB (bundleRelease), which slices per-device.
+android.applicationVariants.all { variant ->
+    def abiCodes = ["armeabi-v7a": 1, "x86": 2, "arm64-v8a": 3, "x86_64": 4]
+    variant.outputs.each { output ->
+        def abi = output.getFilter(com.android.build.OutputFile.ABI)
+        if (abi != null) {
+            output.versionCodeOverride = variant.versionCode * 10 + abiCodes.get(abi, 0)
+        }
+    }
+}
+
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
@@ -141,6 +215,26 @@ dependencies {
     // Used by the DNS-over-HTTPS VpnService (custom DNS resolver to avoid the
     // resolution loop). Same major version React Native already ships.
     implementation("com.squareup.okhttp3:okhttp:4.9.2")
+
+    // WireGuard userspace backend (Phase 5b): parses standard .conf files and
+    // runs a real tunnel via its own GoBackend VpnService. Generic — works with
+    // Mullvad or any provider's WireGuard config. Adds a small native lib
+    // (wireguard-go) per ABI; the standard edition stays well under the 80 MB
+    // budget. The official Guardian/WireGuard artifact from mavenCentral.
+    implementation("com.wireguard.android:tunnel:1.0.20230706")
+
+    // GeckoView — Phase 4 browser engine (Mozilla's own renderer, engine-level
+    // Enhanced Tracking Protection + anti-fingerprinting). `geckoImplementation`
+    // (not `implementation`) links it ONLY into the `gecko` product flavor, so the
+    // default `standard` edition stays at ~21 MB. The gecko-only Kotlin lives in
+    // src/gecko/java (compiled only for that flavor); privacy-ext assets in
+    // src/gecko/assets. Size is mitigated with ABI splits / AAB but still ~92 MB.
+    // Universal multi-ABI artifact from maven.mozilla.org (see root build.gradle).
+    // Pinned to 140.x: it depends on androidx.core 1.16.0 (compileSdk 35 / AGP
+    // 8.8.2, this project's toolchain). GeckoView >= 145 pulls androidx.core
+    // 1.17+/1.18+, which force compileSdk 36 + AGP 8.9.1 — bump those first if
+    // upgrading GeckoView.
+    geckoImplementation("org.mozilla.geckoview:geckoview:140.0.20250707120347")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

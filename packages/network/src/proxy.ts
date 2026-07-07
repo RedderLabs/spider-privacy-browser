@@ -50,8 +50,8 @@ export const NETWORK_MODE_LIST: NetworkModeInfo[] = [
   },
   {
     id: 'mullvad',
-    label: 'Mullvad WireGuard',
-    subtitle: 'Túnel WireGuard (próximamente)',
-    available: false,
+    label: 'WireGuard',
+    subtitle: 'Importa una configuración (Mullvad u otra)',
+    available: true,
   },
 ];

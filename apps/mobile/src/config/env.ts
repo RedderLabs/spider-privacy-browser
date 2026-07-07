@@ -4,6 +4,7 @@
 import {
   PRIVACY_JS_ENABLED,
   CONTENT_BLOCKING_ENABLED,
+  GECKOVIEW_ENABLED,
   DEFAULT_DOH_PROVIDER,
 } from '@env';
 
@@ -23,6 +24,13 @@ export const FEATURES = {
   // Master BUILD switch for tracker request blocking (in-page blocker + the
   // navigation blocklist in HardenedWebView).
   contentBlocking: flag(CONTENT_BLOCKING_ENABLED, true),
+  // Dev kill-switch for the GeckoView engine. The engine is really selected by
+  // the build FLAVOR (standard = WebView, gecko = GeckoView; see BrowserEngine's
+  // runtime native detection and docs/GECKOVIEW.md), not by this flag — the same
+  // JS bundle ships in both editions. This only lets a developer FORCE the WebView
+  // even in a gecko build by setting GECKOVIEW_ENABLED=false. Default true = "use
+  // GeckoView if this build compiled it in".
+  geckoView: flag(GECKOVIEW_ENABLED, true),
 } as const;
 
 // Default encrypted-DNS provider id used to seed settingsStore.dohProvider.

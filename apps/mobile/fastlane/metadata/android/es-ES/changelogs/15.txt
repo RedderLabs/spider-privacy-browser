@@ -1,0 +1,3 @@
+* Red privada (Fase 5): el selector de red ya es totalmente funcional.
+* Orbot (Tor): estado del túnel en vivo en el chip de red (Conectando / Conectado / Sin conectar), reflejando el estado real de la VPN. Salida por Tor verificada en dispositivo.
+* WireGuard: nuevo túnel genérico — importa un .conf estándar de Mullvad o cualquier proveedor y conéctate. No se incrusta ninguna cuenta.

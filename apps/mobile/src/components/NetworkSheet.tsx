@@ -7,6 +7,7 @@ import { Modal, View, Text, Pressable, TouchableOpacity, StyleSheet } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NETWORK_MODE_LIST } from '@spider/network';
 import { useSettingsStore } from '../store/settingsStore';
+import { useNetworkStatusStore } from '../store/networkStatusStore';
 import { useNetworkSelect } from '../hooks/useNetworkSelect';
 import { useT } from '../i18n';
 import { radius, spacing, type Palette, type Surfaces } from '../theme/theme';
@@ -24,7 +25,24 @@ export const NetworkSheet: React.FC<NetworkSheetProps> = ({ visible, onClose }) 
   const { colors, surfaces } = useTheme();
   const styles = React.useMemo(() => makeStyles(colors, surfaces), [colors, surfaces]);
   const networkMode = useSettingsStore(s => s.networkMode);
+  const orbotStatus = useNetworkStatusStore(s => s.orbotStatus);
   const select = useNetworkSelect(onClose);
+
+  // When Orbot is the active transport, its row shows the REAL tunnel state
+  // instead of the generic description.
+  const orbotSubtitle = (): string | null => {
+    switch (orbotStatus) {
+      case 'starting':
+        return t('netConnecting');
+      case 'on':
+        return t('netConnected');
+      case 'off':
+      case 'stopping':
+        return t('netOffline');
+      default:
+        return null;
+    }
+  };
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
@@ -37,6 +55,8 @@ export const NetworkSheet: React.FC<NetworkSheetProps> = ({ visible, onClose }) 
           {NETWORK_MODE_LIST.map(m => {
             const active = networkMode === m.id;
             const disabled = !m.available;
+            const liveSub = m.id === 'orbot' && active ? orbotSubtitle() : null;
+            const subtitle = liveSub ?? m.subtitle;
             return (
               <TouchableOpacity
                 key={m.id}
@@ -53,7 +73,7 @@ export const NetworkSheet: React.FC<NetworkSheetProps> = ({ visible, onClose }) 
                 <View style={styles.rowText}>
                   <Text style={[styles.rowLabel, active && styles.rowLabelActive]}>{m.label}</Text>
                   <Text style={[styles.rowSub, disabled && styles.rowSubDisabled]} numberOfLines={1}>
-                    {m.subtitle}
+                    {subtitle}
                   </Text>
                 </View>
                 {active ? <Text style={styles.check}>✓</Text> : null}

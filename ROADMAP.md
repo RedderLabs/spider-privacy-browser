@@ -27,10 +27,10 @@ La app **funciona como shell de navegación** con hardening JS real, pero varias
 | i18n (ES/EN) | `[x]` | `src/i18n` (`useT` + translations), selector en Settings, persistido; todas las pantallas traducidas |
 | DNS cifrado (Private DNS/DoT) | `[x]` (A) ✔ verificado | Módulo nativo `PrivateDns`: estado real + abrir Ajustes + copiar host DoT al portapapeles. Verificado en emulador (API 37): refleja activo/off correctamente |
 | DNS cifrado (DoH in-app VPN) | `[x]` v2 ✔ verificado | `DnsVpnService` (solo-DNS, DoH vía OkHttp, anti-bucle); toggle en Settings. v2: IPv4+IPv6, UDP+TCP (fallback TC=1→TCP en `DnsTcp`), notificación foreground (special-use FGS), `stop()` real (cierra el tun fd). Setup en hilo de fondo (evita `NetworkOnMainThreadException`). Verificado en emulador (API 37): arranca/resuelve/detiene end-to-end |
-| Red privada (selector) | `[~]` | Selector unificado `Directa / Orbot (Tor) / Mullvad WireGuard` en `@spider/network` (`NETWORK_MODE_LIST`) |
-| Orbot (Tor) | `[~]` | Puente nativo `OrbotModule.kt` (detecta/lanza Orbot vía intent). Falta verificar en build nativo |
+| Red privada (selector) | `[x]` ✔ | Selector unificado `Directa / Orbot (Tor) / WireGuard` en `@spider/network` (`NETWORK_MODE_LIST`); las tres opciones funcionan (WireGuard vía import de config) |
+| Orbot (Tor) | `[x]` ✔ verificado | `OrbotModule.kt` (detecta/lanza + estado en vivo por transporte VPN). Verificado en dispositivo físico (Android 16): salida por Tor confirmada en `check.torproject.org` |
 | Excepciones por sitio | `[x]` | **Task 9 hecho**: override por dominio `off`/`strict` en `settingsStore` (`siteExceptions` + `resolveHardening`, persistido); precedencia sobre el master global; hoja por-sitio al tocar el badge de escudo; recarga al cambiar |
-| VPN WireGuard | `[ ]` | Mullvad WireGuard marcado "próximamente"; sin `VpnService` propio todavía |
+| VPN WireGuard | `[x]` code-complete | `WireGuardModule.kt` + `wireguard-android` GoBackend (VpnService real); importa un `.conf` genérico (Mullvad u otro). Parseo verificado en dispositivo; connect pendiente de un `.conf` real |
 | GeckoView | `[ ]` | No existe (solo `MainActivity`/`MainApplication` por defecto) |
 | Monorepo (mover app a `apps/mobile/`) | `[x]` ✔ (2026-07-05) | App RN movida a `apps/mobile/`; workspaces `apps/*`+`packages/*`; build Android verificado (BUILD SUCCESSFUL). iOS reescrito sin compilar (falta Mac) |
 | Persistencia (incógnito-puro) | `[x]` | **Solo el idioma** sobrevive al cierre/kill (`partialize`: `language`). Toggles, perfil, DoH, excepciones por-sitio, `networkMode` y pestañas se reinician a defaults en cada arranque. DNS VPN: `START_NOT_STICKY` + `onTaskRemoved` (no revive en segundo plano; batería) |
@@ -131,11 +131,20 @@ Objetivo: terminar la migración iniciada. Los paquetes ya son workspaces; falta
 
 Objetivo: reemplazar `react-native-webview` (que en Android es el System WebView) por GeckoView, que da Enhanced Tracking Protection y anti-fingerprinting a nivel de motor.
 
-- [ ] Añadir dependencia `org.mozilla.geckoview:geckoview-default`.
-- [ ] Crear `GeckoViewModule.kt` (init de `GeckoRuntime` con `ContentBlocking` STRICT + FINGERPRINTING + CRYPTOMINING).
-- [ ] Puente RN + `ViewManager` para renderizar GeckoView desde JS.
-- [ ] Portar la inyección de `@spider/privacy-js` al ciclo de vida de GeckoView.
-- [ ] Definir qué defensas del bundle JS son redundantes con las nativas de Gecko.
+- [x] Añadir dependencia `org.mozilla.geckoview:geckoview`.
+- [x] `GeckoRuntimeProvider.kt` (init de `GeckoRuntime` con ETP `STRICT` + `AntiTracking.STRICT`, que incluye FINGERPRINTING + CRYPTOMINING).
+- [x] Puente RN + `ViewManager` para renderizar GeckoView desde JS (render verificado en API 34).
+- [x] Portar la inyección de `@spider/privacy-js` al ciclo de vida de GeckoView (WebExtension `world:MAIN`; spoofing verificado en browserleaks).
+- [x] Definir qué defensas del bundle JS son redundantes con las nativas de Gecko (solo el blocker de peticiones; ver `docs/GECKOVIEW.md`).
+
+**Estado:** implementación completa y verificada (rama `feat/gecko-engine`).
+**Resuelto como dos ediciones (product flavors):** el build `standard` (WebView,
+~21 MB) no enlaza GeckoView y va a Play + F-Droid (cumple los 80 MB); la edición
+`gecko` (~92 MB/ABI) enlaza el motor y se distribuye **fuera de Play** (F-Droid /
+APK directo) como paquete aparte (`applicationIdSuffix ".gecko"`) que el usuario
+elige. GeckoView es `geckoImplementation` (solo el flavor gecko paga el tamaño);
+el Kotlin de Gecko vive en `src/gecko/`. El motor se selecciona en runtime según
+lo compilado. Detalles y builds en `docs/GECKOVIEW.md`.
 
 ---
 
@@ -152,15 +161,121 @@ Objetivo: hacer real la sección "Red privada" (hoy un selector `Directa / Orbot
 - [x] Manifest: `<queries>` para visibilidad del paquete `org.torproject.android` (Android 11+).
 - [x] Wrapper JS `src/native/orbot.ts` (fallback a `Linking` en iOS / sin bridge).
 - [x] UI: selector "Red privada" en `SettingsScreen`; al elegir Orbot se lanza Tor o se ofrece instalarlo.
-- [ ] **Verificar en build nativo** (dispositivo con/sin Orbot): consentimiento VPN, arranque de Tor, y comprobar salida por Tor (p. ej. `check.torproject.org`).
-- [ ] **Estado en vivo**: escuchar el broadcast de estado de Orbot (`extra STATUS`: ON/OFF/STARTING) y reflejarlo en el badge de red (hoy el selector no lee el estado real de la VPN).
-- [ ] **iOS**: Orbot iOS no ofrece handoff app-a-app equivalente; evaluar `NEVPNManager`/perfil o dejar Tor como solo-Android.
+- [x] **Verificar en build nativo** ✔ (2026-07-07, OPPO CPH2747 / Android 16, edición gecko v0.0.14): Orbot detectado e instalado desde el flujo, consentimiento VPN, VPN de Tor device-wide, y salida por Tor confirmada por API (`{"IsTor":true}`) y visualmente en `check.torproject.org` ("Congratulations. This browser is configured to use Tor.").
+- [x] **Estado en vivo** ✔ (2026-07-07): reflejar el estado REAL del túnel en el chip/selector. Se probó el broadcast legacy de Orbot (`intent.action.STATUS`), pero **Orbot 17.x ya no lo emite a apps de terceros** — así que la señal fiable es la **detección del transporte VPN activo** vía `ConnectivityManager.NetworkCallback` (independiente de la versión de Orbot). `OrbotModule` emite `orbotStatus` → `networkStatusStore` → el chip muestra "Conectando…/Conectado/Sin conectar". Verificado en dispositivo (standard v0.0.15): la fila de Orbot pasa a "Conectado" con el túnel arriba y "Sin conectar" al caer.
+- [ ] **iOS**: Orbot iOS no ofrece handoff app-a-app equivalente; queda como **solo-Android** por ahora (evaluar `NEVPNManager`/perfil en el futuro, requiere Mac + entitlement).
 
-### 5b. Mullvad WireGuard (más adelante)
-- [ ] `VpnServiceModule.kt` extendiendo `android.net.VpnService`.
-- [ ] Integrar `wireguard-android` (túnel full: `0.0.0.0/0`, DNS Mullvad).
-- [ ] Conectar la opción `mullvad` del selector (hoy "próximamente") al servicio.
-- [ ] iOS: `NEPacketTunnelProvider` (Network Extension, requiere entitlement de pago).
+### 5b. WireGuard genérico (import de config) ✔ code-complete
+Decisión (2026-07-07): en vez de atar la app a la API de pago de Mullvad, se implementó un **túnel WireGuard genérico** que importa un `.conf` estándar (Mullvad o cualquier proveedor). La app no embebe ninguna cuenta.
+- [x] `wireguard-android` (`com.wireguard.android:tunnel`) integrado; su `GoBackend` aporta el `VpnService` real (declarado en el manifest con FGS special-use). +~1 MB en standard (12.8 MB, dentro de los 80).
+- [x] `WireGuardModule.kt` (+ `WireGuardPackage`, registrado en `MainApplication`): `importConfig` (parsea `Config.parse`), `connect` (consentimiento VPN vía `VpnService.prepare` + `startActivityForResult`), `disconnect`, `getStatus`; emite `wireguardState`. Backend en hilo de fondo.
+- [x] Wrapper JS `src/native/wireguard.ts` + `WireGuardSheet` (pegar `.conf` → importar/conectar/desconectar) + opción `mullvad` del selector cableada (abre la hoja vía `networkStatusStore.wgSheetOpen`). Relabelada a "WireGuard".
+- [x] **Verificado en dispositivo** (parcial, 2026-07-07): la hoja abre, el módulo nativo carga sin crash, y el parseo real de `Config.parse` funciona end-to-end (config inválida → excepción → alert "Configuración inválida"). **Pendiente de config real**: el `connect` (bring-up del túnel + salida por el túnel) no se ha ejercitado por falta de un `.conf` WireGuard válido.
+- [ ] iOS: `NEPacketTunnelProvider` (Network Extension, requiere Mac + entitlement de pago). **Solo-Android** por ahora.
+
+---
+
+## Fase 6 — Pre-lanzamiento (endurecer para el público)
+
+El núcleo Android está sorprendentemente completo (DoH VPN, WireGuard, Orbot,
+bloqueo nativo, GeckoView, anti-fingerprint — todo real, sin stubs). Lo que falta
+para un lanzamiento público NO son features, es **madurez de producto**: que las
+promesas cuadren con el binario, que no se caiga, que sea accesible y auditable.
+Orden por prioridad (P0 = bloqueante, P1 = muy recomendado, P2 = post-lanzamiento).
+
+### 6.0 — Decisión de alcance de plataforma (P0)
+- [ ] **Lanzar como Android-only y decirlo claro.** iOS hoy es esquelético (solo
+  `SpiderContentBlocker.m`, 44 líneas, sin compilar; faltan DoH/DNS/Orbot/WireGuard).
+  No anunciar multiplataforma. README, listings de tienda y web deben decir "Android".
+
+### 6.1 — Reconciliar documentación con el código (P0, reputacional)
+Para un producto de privacidad, una afirmación obsoleta es un riesgo de credibilidad.
+- [ ] `SECURITY.md`: hoy dice que WireGuard es "un próximamente sin implementar", Orbot
+  "por verificar" y el bloqueo nativo "llega en la Fase 2". Las TRES están hechas y
+  verificadas. Actualizar "Qué protege / Qué NO" al estado real (Orbot verificado en
+  dispositivo; WireGuard genérico por import de `.conf`; bloqueo nativo de subrecursos
+  activo; GeckoView como edición aparte).
+- [ ] `packages/network/src/proxy.ts:7` — comentario "próximamente hasta que aterrice el
+  VpnService" ya no aplica (existe y `available:true`). Corregir.
+- [ ] `README.md` / `PRIVACY.md` / `docs/*` — barrido de coherencia con Fase 2/4/5.
+- [ ] `SettingsScreen.tsx` — la rama " · próximamente" ya no se dispara para ningún modo
+  de red; revisar que no quede UI muerta.
+
+### 6.2 — Política de privacidad publicable (P0, obligatorio Play)
+- [ ] Poner un **email de contacto real** en `PRIVACY.md` y `SECURITY.md`.
+- [ ] Hostear `PRIVACY.md` en URL pública (GitHub Pages) para el Play Console.
+
+### 6.3 — Robustez en runtime (P0)
+- [ ] **ErrorBoundary + pantalla de recuperación local.** Hoy no hay ninguno: un throw
+  no capturado en render deja pantalla en blanco. Coherente con "sin crash reporting",
+  pero hace falta un fallback UI que ofrezca reiniciar/volver a Home (sin telemetría).
+
+### 6.4 — Accesibilidad (P1, penaliza en Play y es lo correcto)
+- [ ] `accessibilityLabel` / `accessibilityRole` en controles interactivos (barra de URL,
+  botón shield, toggles, acciones de pestañas, filas del selector de red). Hoy: **cero**
+  ocurrencias en `src/`. Empezar por los flujos críticos.
+
+### 6.5 — CI/CD mínimo (P1)
+- [ ] GitHub Actions (`.github/workflows/`): `tsc --noEmit` + `npm run lint` + `npm test`
+  en cada push/PR. Opcional: job que compile `assembleStandardRelease` como smoke.
+- [ ] (Opcional) pre-commit con lint-staged para no romper el árbol.
+
+### 6.6 — F-Droid (P1)
+- [ ] Actualizar el `com.spiderprivacybrowser.yml` de `docs/FDROID.md` al tag/versionCode
+  actuales (v0.0.15 / 15), probar `fdroid build` localmente (ojo: `newArchEnabled=true`
+  es lo más propenso a romper el build reproducible) y abrir el MR en `fdroiddata`.
+
+### 6.7 — Higiene de repo (P1)
+- [ ] Sacar del árbol el APK de ~95 MB commiteado (infla el repo; si está en historial,
+  `git filter-repo`).
+- [ ] Mover fuera del directorio de trabajo los ficheros sensibles locales (`keys.txt`,
+  `github.txt`, `.env.backblaze`, `cookies_jpg/`). Están gitignored, pero su presencia
+  junto al repo es riesgo de fuga.
+- [ ] Rotar la GCP API key y recrear `.mcp.json` local (pendiente de fases previas).
+
+### 6.8 — Verificación e2e (P2)
+- [ ] Smoke e2e con **Maestro** (más ligero que Detox para dev en solitario): arranque,
+  navegar, toggle shield, conectar Orbot, importar WireGuard.
+- [ ] Tests nativos JUnit para los parsers de WireGuard/Orbot/Blocklist (hoy solo hay
+  `DnsPacketTest.kt`).
+- [ ] Cerrar el único hueco funcional de Fase 5: **verificar el `connect` de WireGuard**
+  con un `.conf` real (salida por el túnel).
+
+### 6.9 — Play Console (P2, cuando se decida entrar a Play)
+- [ ] Feature graphic 1024×500 (pendiente), data safety = "no data", content rating,
+  y **justificar `FOREGROUND_SERVICE_SPECIAL_USE`** en la review (caso de uso VPN-DNS).
+- [ ] Subir el AAB `bundleStandardRelease` firmado con la key real.
+
+---
+
+## Fase 7 — Escritorio (PC / Linux)
+
+La IP reutilizable son los tres paquetes JS/TS agnósticos de plataforma
+(`@spider/privacy-js`, `@spider/content-blocking`, `@spider/network`). La Fase 4 ya
+construyó una **WebExtension** (`scripts/gen-gecko-privacy-ext.js`) que inyecta
+`privacy-js` como content script en `world:"MAIN"` para GeckoView — que es
+exactamente el mecanismo de una extensión de escritorio. Dos caminos, muy distinto coste:
+
+### 7a. Extensión de navegador (RECOMENDADO — barato, alto apalancamiento)
+Una extensión para **Firefox + Chromium** (Chrome/Edge/Brave) que reutiliza ~80% del código:
+- [ ] Content script `document_start` que inyecta `buildPrivacyBundle()` (anti-fingerprint:
+  canvas/webgl/navigator/fonts/timezone) — misma lógica que móvil.
+- [ ] Bloqueo de red desde el pipeline `@spider/content-blocking`: reglas
+  `declarativeNetRequest` (Chrome MV3) y `webRequest` (Firefox) generadas desde las mismas
+  listas de filtros.
+- [ ] Popup con los toggles de privacidad y contador de bloqueos (reutiliza i18n).
+- [ ] Empaquetar para AMO (Firefox add-ons) y Chrome Web Store.
+- **Coste:** semanas, no meses. Da presencia real en PC/Linux (y macOS) sin construir un
+  navegador. Es honesto: es una extensión, no un navegador.
+
+### 7b. App de escritorio independiente (OPCIONAL, caro, aplazar)
+Un navegador de marca propia con **Tauri** (Rust + WebView del sistema; NO Electron, que
+embebe Chromium ~150 MB e irónicamente aumenta la superficie de fingerprint).
+- Implica mantener un navegador entero: pestañas, historial, actualizador, empaquetado
+  por-distro (WebKitGTK en Linux es inconsistente), y firma de código en Win/macOS.
+- El delta de privacidad sobre la extensión es **marginal** salvo que controles el motor
+  (ni Tauri ni Electron te lo dan a nivel de fingerprinting).
+- **Recomendación:** aplazar hasta que el móvil tenga tracción; empezar por 7a.
 
 ---
 

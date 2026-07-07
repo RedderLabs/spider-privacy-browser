@@ -5,7 +5,7 @@
 // traffic through Tor. On iOS there is no equivalent app-to-app VPN handoff, so
 // these calls degrade gracefully (isInstalled → false, start → not installed)
 // and callers fall back to opening the install page via Linking.
-import { NativeModules, Linking, Platform } from 'react-native';
+import { NativeModules, DeviceEventEmitter, Linking, Platform } from 'react-native';
 import { ORBOT } from '@spider/network';
 
 interface StartResult {
@@ -13,9 +13,31 @@ interface StartResult {
   installed: boolean;
 }
 
+// Normalized live tunnel state. Orbot broadcasts raw "ON"/"OFF"/"STARTING"/
+// "STOPPING"; we lowercase them and add 'unknown' for "not reported yet".
+export type OrbotStatus = 'on' | 'off' | 'starting' | 'stopping' | 'unknown';
+
+const EVENT_STATUS = 'orbotStatus';
+
+function normalizeStatus(raw: string): OrbotStatus {
+  switch (raw.toUpperCase()) {
+    case 'ON':
+      return 'on';
+    case 'STARTING':
+      return 'starting';
+    case 'STOPPING':
+      return 'stopping';
+    case 'OFF':
+      return 'off';
+    default:
+      return 'unknown';
+  }
+}
+
 interface OrbotNative {
   isInstalled(): Promise<boolean>;
   start(): Promise<StartResult>;
+  startStatus(): Promise<boolean>;
   openApp(): Promise<boolean>;
   openInstall(): Promise<boolean>;
 }
@@ -67,5 +89,22 @@ export const orbot = {
       }
     }
     await Linking.openURL(ORBOT.installUrl);
+  },
+
+  /**
+   * Subscribe to Orbot's live tunnel status. Registers the native broadcast
+   * receiver (idempotent) and calls `cb` with each normalized status change.
+   * Returns an unsubscribe function. No-op (never fires) off Android.
+   */
+  subscribeStatus(cb: (status: OrbotStatus) => void): () => void {
+    if (!native) {
+      return () => {};
+    }
+    const sub = DeviceEventEmitter.addListener(EVENT_STATUS, (raw: string) =>
+      cb(normalizeStatus(raw)),
+    );
+    // Start listening + ask Orbot to report its current status.
+    native.startStatus().catch(() => {});
+    return () => sub.remove();
   },
 };

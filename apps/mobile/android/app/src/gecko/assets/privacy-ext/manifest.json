@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Spider Privacy Hardening",
+  "version": "1.0",
+  "description": "Injects Spider fingerprint-hardening shims at document_start.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "spider-hardening@spider.privacy"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN",
+      "js": [
+        "hardening.js"
+      ]
+    }
+  ]
+}
