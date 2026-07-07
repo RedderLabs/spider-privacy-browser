@@ -9,6 +9,21 @@ envía a ningún servidor.
 Está inspirado en el enfoque de Mullvad Browser (endurecer el navegador para que
 todos los usuarios se parezcan entre sí), llevado a un navegador móvil ligero.
 
+## Descargar
+
+La app se instala directamente (sideload); no necesita Google Play. Descarga el
+APK de la última versión desde
+[**GitHub Releases**](https://github.com/RedderLabs/spider-privacy-browser/releases/latest)
+y ábrelo en tu Android para instalarlo.
+
+- **La mayoría de móviles** (edición estándar, ~12 MB):
+  [Spider-standard-arm64-v8a.apk](https://github.com/RedderLabs/spider-privacy-browser/releases/latest/download/Spider-standard-arm64-v8a.apk)
+- **Otras versiones** (edición GeckoView, 32 bits o emulador): consulta la guía
+  completa en [DOWNLOAD.md](DOWNLOAD.md).
+
+Al abrir el APK, Android te pedirá permitir «instalar apps desconocidas» desde el
+navegador o el gestor de archivos; acéptalo y continúa con la instalación.
+
 ## Qué hace
 
 - **Protección contra fingerprinting.** Antes de que cargue cada página se
