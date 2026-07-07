@@ -135,8 +135,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Bump both on every release. versionName must match src/version.ts
         // (the string shown in the Drawer/About); versionCode increments by 1.
-        versionCode 13
-        versionName "0.0.13"
+        versionCode 14
+        versionName "0.0.14"
     }
 
     // Two editions from one codebase (see docs/GECKOVIEW.md):
