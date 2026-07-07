@@ -16,6 +16,7 @@
 // written into .git/config (we use an ephemeral remote URL).
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -48,9 +49,15 @@ const branch = env.GITLAB_BRANCH || 'main';
 if (!token) die('GITLAB_TOKEN missing in .env.gitlab');
 if (!project) die('GITLAB_PROJECT missing in .env.gitlab (e.g. redderlabs/spider-privacy-browser)');
 
-// oauth2:<token> works for both personal and project access tokens over HTTPS.
-const remoteUrl = `https://oauth2:${token}@${host}/${project}.git`;
-const safeUrl = `https://oauth2:***@${host}/${project}.git`;
+// The push URL is TOKENLESS so the secret never lands in argv or git's error
+// output (git prints the failing URL on error — a token in the URL leaks there).
+// Auth is fed via a temporary credential-store file that git reads out-of-band.
+const remoteUrl = `https://${host}/${project}.git`;
+
+// Scrub the token (and any URL-embedded form) from anything we ever print.
+function scrub(s) {
+  return String(s).split(token).join('***');
+}
 
 function git(args, opts = {}) {
   return execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8', ...opts });
@@ -59,7 +66,7 @@ function git(args, opts = {}) {
 const headSha = git(['rev-parse', '--short', branch]).trim();
 const tagCount = git(['tag']).trim().split('\n').filter(Boolean).length;
 
-console.log(`▸ Mirror → ${safeUrl}`);
+console.log(`▸ Mirror → ${remoteUrl}`);
 console.log(`  branch : ${branch} @ ${headSha}`);
 console.log(`  tags   : ${tagCount}`);
 
@@ -68,12 +75,22 @@ if (dryRun) {
   process.exit(0);
 }
 
+// Temp credential store: `https://oauth2:<token>@host` on one line. git reads it
+// for the matching host and never echoes it. Deleted in finally.
+const credFile = path.join(os.tmpdir(), `spider-gitlab-cred-${process.pid}`);
+const credHelper = `store --file=${credFile.replace(/\\/g, '/')}`;
 try {
-  // Push the branch, then all tags. stdio inherited so the user sees progress;
-  // the URL (with token) is never printed by git push.
-  git(['push', remoteUrl, `${branch}:${branch}`], { stdio: 'inherit' });
-  git(['push', remoteUrl, '--tags'], { stdio: 'inherit' });
+  fs.writeFileSync(credFile, `https://oauth2:${token}@${host}\n`, { mode: 0o600 });
+  // Capture (not inherit) stderr so a failing git can't print anything unscrubbed.
+  git(['-c', `credential.helper=${credHelper}`, 'push', remoteUrl, `${branch}:${branch}`],
+    { stdio: ['ignore', 'inherit', 'pipe'] });
+  git(['-c', `credential.helper=${credHelper}`, 'push', remoteUrl, '--tags'],
+    { stdio: ['ignore', 'inherit', 'pipe'] });
   console.log('\n✓ mirror updated.');
 } catch (e) {
-  die(`git push failed: ${e.message}`);
+  const stderr = e.stderr ? scrub(e.stderr.toString()) : '';
+  if (stderr) console.error(stderr.trim());
+  die(`git push failed (${scrub(e.message)})`);
+} finally {
+  try { fs.unlinkSync(credFile); } catch { /* already gone */ }
 }
