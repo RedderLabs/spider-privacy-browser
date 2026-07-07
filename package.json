@@ -13,6 +13,7 @@
     "lint": "npm run lint --workspace apps/mobile",
     "test": "npm test --workspace apps/mobile",
     "publish:release": "node scripts/publish-release.mjs",
+    "mirror:gitlab": "node scripts/mirror-gitlab.mjs",
     "postinstall": "patch-package"
   },
   "devDependencies": {

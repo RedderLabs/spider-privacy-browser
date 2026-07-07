@@ -100,6 +100,24 @@ never change between releases.
 > debug fallback — an installed app can only be updated by a build signed with the
 > same key. Set up `android/keystore.properties` first (see above).
 
+## GitLab mirror (secondary)
+
+GitHub is the primary home (F-Droid and the `DOWNLOAD.md` links point there). A
+read-only **mirror** is kept on GitLab (`gitlab.com/redderlabs/spider-privacy-browser`)
+for redundancy. GitLab's free tier has no automatic pull-mirroring, so push from here
+after a release:
+
+```
+# One-time: create .env.gitlab (gitignored) at the repo root with
+#   GITLAB_TOKEN=<access token, scope api or write_repository>
+#   GITLAB_PROJECT=redderlabs/spider-privacy-browser
+npm run mirror:gitlab            # pushes main + all tags to GitLab
+#   --dry-run                    preview without pushing
+```
+
+The token is used only in-memory for the push (never written to `.git/config`).
+Downloads and F-Droid are unaffected — this only mirrors the source + tags.
+
 ## Checklist per release
 
 - [ ] Bump `apps/mobile/src/version.ts` + `versionName`/`versionCode` in `apps/mobile/android/app/build.gradle`.

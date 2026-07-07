@@ -2,6 +2,7 @@
 # (see docs/PUBLISHING.md). The committed app config (apps/mobile/.env) is only
 # build-time feature flags, not secrets, so it is intentionally NOT ignored.
 **/.env.backblaze
+**/.env.gitlab
 **/.env.*.local
 
 # OSX
