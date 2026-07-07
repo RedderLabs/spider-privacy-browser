@@ -175,6 +175,110 @@ Decisión (2026-07-07): en vez de atar la app a la API de pago de Mullvad, se im
 
 ---
 
+## Fase 6 — Pre-lanzamiento (endurecer para el público)
+
+El núcleo Android está sorprendentemente completo (DoH VPN, WireGuard, Orbot,
+bloqueo nativo, GeckoView, anti-fingerprint — todo real, sin stubs). Lo que falta
+para un lanzamiento público NO son features, es **madurez de producto**: que las
+promesas cuadren con el binario, que no se caiga, que sea accesible y auditable.
+Orden por prioridad (P0 = bloqueante, P1 = muy recomendado, P2 = post-lanzamiento).
+
+### 6.0 — Decisión de alcance de plataforma (P0)
+- [ ] **Lanzar como Android-only y decirlo claro.** iOS hoy es esquelético (solo
+  `SpiderContentBlocker.m`, 44 líneas, sin compilar; faltan DoH/DNS/Orbot/WireGuard).
+  No anunciar multiplataforma. README, listings de tienda y web deben decir "Android".
+
+### 6.1 — Reconciliar documentación con el código (P0, reputacional)
+Para un producto de privacidad, una afirmación obsoleta es un riesgo de credibilidad.
+- [ ] `SECURITY.md`: hoy dice que WireGuard es "un próximamente sin implementar", Orbot
+  "por verificar" y el bloqueo nativo "llega en la Fase 2". Las TRES están hechas y
+  verificadas. Actualizar "Qué protege / Qué NO" al estado real (Orbot verificado en
+  dispositivo; WireGuard genérico por import de `.conf`; bloqueo nativo de subrecursos
+  activo; GeckoView como edición aparte).
+- [ ] `packages/network/src/proxy.ts:7` — comentario "próximamente hasta que aterrice el
+  VpnService" ya no aplica (existe y `available:true`). Corregir.
+- [ ] `README.md` / `PRIVACY.md` / `docs/*` — barrido de coherencia con Fase 2/4/5.
+- [ ] `SettingsScreen.tsx` — la rama " · próximamente" ya no se dispara para ningún modo
+  de red; revisar que no quede UI muerta.
+
+### 6.2 — Política de privacidad publicable (P0, obligatorio Play)
+- [ ] Poner un **email de contacto real** en `PRIVACY.md` y `SECURITY.md`.
+- [ ] Hostear `PRIVACY.md` en URL pública (GitHub Pages) para el Play Console.
+
+### 6.3 — Robustez en runtime (P0)
+- [ ] **ErrorBoundary + pantalla de recuperación local.** Hoy no hay ninguno: un throw
+  no capturado en render deja pantalla en blanco. Coherente con "sin crash reporting",
+  pero hace falta un fallback UI que ofrezca reiniciar/volver a Home (sin telemetría).
+
+### 6.4 — Accesibilidad (P1, penaliza en Play y es lo correcto)
+- [ ] `accessibilityLabel` / `accessibilityRole` en controles interactivos (barra de URL,
+  botón shield, toggles, acciones de pestañas, filas del selector de red). Hoy: **cero**
+  ocurrencias en `src/`. Empezar por los flujos críticos.
+
+### 6.5 — CI/CD mínimo (P1)
+- [ ] GitHub Actions (`.github/workflows/`): `tsc --noEmit` + `npm run lint` + `npm test`
+  en cada push/PR. Opcional: job que compile `assembleStandardRelease` como smoke.
+- [ ] (Opcional) pre-commit con lint-staged para no romper el árbol.
+
+### 6.6 — F-Droid (P1)
+- [ ] Actualizar el `com.spiderprivacybrowser.yml` de `docs/FDROID.md` al tag/versionCode
+  actuales (v0.0.15 / 15), probar `fdroid build` localmente (ojo: `newArchEnabled=true`
+  es lo más propenso a romper el build reproducible) y abrir el MR en `fdroiddata`.
+
+### 6.7 — Higiene de repo (P1)
+- [ ] Sacar del árbol el APK de ~95 MB commiteado (infla el repo; si está en historial,
+  `git filter-repo`).
+- [ ] Mover fuera del directorio de trabajo los ficheros sensibles locales (`keys.txt`,
+  `github.txt`, `.env.backblaze`, `cookies_jpg/`). Están gitignored, pero su presencia
+  junto al repo es riesgo de fuga.
+- [ ] Rotar la GCP API key y recrear `.mcp.json` local (pendiente de fases previas).
+
+### 6.8 — Verificación e2e (P2)
+- [ ] Smoke e2e con **Maestro** (más ligero que Detox para dev en solitario): arranque,
+  navegar, toggle shield, conectar Orbot, importar WireGuard.
+- [ ] Tests nativos JUnit para los parsers de WireGuard/Orbot/Blocklist (hoy solo hay
+  `DnsPacketTest.kt`).
+- [ ] Cerrar el único hueco funcional de Fase 5: **verificar el `connect` de WireGuard**
+  con un `.conf` real (salida por el túnel).
+
+### 6.9 — Play Console (P2, cuando se decida entrar a Play)
+- [ ] Feature graphic 1024×500 (pendiente), data safety = "no data", content rating,
+  y **justificar `FOREGROUND_SERVICE_SPECIAL_USE`** en la review (caso de uso VPN-DNS).
+- [ ] Subir el AAB `bundleStandardRelease` firmado con la key real.
+
+---
+
+## Fase 7 — Escritorio (PC / Linux)
+
+La IP reutilizable son los tres paquetes JS/TS agnósticos de plataforma
+(`@spider/privacy-js`, `@spider/content-blocking`, `@spider/network`). La Fase 4 ya
+construyó una **WebExtension** (`scripts/gen-gecko-privacy-ext.js`) que inyecta
+`privacy-js` como content script en `world:"MAIN"` para GeckoView — que es
+exactamente el mecanismo de una extensión de escritorio. Dos caminos, muy distinto coste:
+
+### 7a. Extensión de navegador (RECOMENDADO — barato, alto apalancamiento)
+Una extensión para **Firefox + Chromium** (Chrome/Edge/Brave) que reutiliza ~80% del código:
+- [ ] Content script `document_start` que inyecta `buildPrivacyBundle()` (anti-fingerprint:
+  canvas/webgl/navigator/fonts/timezone) — misma lógica que móvil.
+- [ ] Bloqueo de red desde el pipeline `@spider/content-blocking`: reglas
+  `declarativeNetRequest` (Chrome MV3) y `webRequest` (Firefox) generadas desde las mismas
+  listas de filtros.
+- [ ] Popup con los toggles de privacidad y contador de bloqueos (reutiliza i18n).
+- [ ] Empaquetar para AMO (Firefox add-ons) y Chrome Web Store.
+- **Coste:** semanas, no meses. Da presencia real en PC/Linux (y macOS) sin construir un
+  navegador. Es honesto: es una extensión, no un navegador.
+
+### 7b. App de escritorio independiente (OPCIONAL, caro, aplazar)
+Un navegador de marca propia con **Tauri** (Rust + WebView del sistema; NO Electron, que
+embebe Chromium ~150 MB e irónicamente aumenta la superficie de fingerprint).
+- Implica mantener un navegador entero: pestañas, historial, actualizador, empaquetado
+  por-distro (WebKitGTK en Linux es inconsistente), y firma de código en Win/macOS.
+- El delta de privacidad sobre la extensión es **marginal** salvo que controles el motor
+  (ni Tauri ni Electron te lo dan a nivel de fingerprinting).
+- **Recomendación:** aplazar hasta que el móvil tenga tracción; empezar por 7a.
+
+---
+
 ## Deuda técnica transversal (atacar en cualquier fase)
 
 - [x] ~~Conflicto de peer deps `react-native-get-random-values@^2` (exige RN ≥0.81)~~ → **resuelto**: dependencia eliminada; `src/utils/uuid.ts` ya no la necesita (usa `crypto.getRandomValues` si existe, si no fallback `Math.random`). Revisar si `npm install` aún necesita `--legacy-peer-deps` por otras deps.
