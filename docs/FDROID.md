@@ -53,11 +53,8 @@ Builds:
     commit: v0.0.16
     subdir: apps/mobile/android/app
     sudo:
-      - sysctl fs.inotify.max_user_watches=524288 || true
-      - curl -Lo node.tar.gz https://nodejs.org/dist/v20.18.1/node-v20.18.1-linux-x64.tar.gz
-      - echo "259e5a8bf2e15ecece65bd2a47153262eda71c0b2c9700d5e703ce4951572784  node.tar.gz" | sha256sum -c -
-      - tar xzf node.tar.gz --strip-components=1 -C /usr/local/
-      - npm -g install npm
+      - apt-get update
+      - apt-get install -y npm
     ndk: 27.1.12297006
     init:
       - cd ../../../.. && npm ci
@@ -77,7 +74,7 @@ CurrentVersionCode: 16
 
 Qué hace cada parte:
 
-- **`sudo`**: instala Node como root (la imagen base de F-Droid no trae Node reciente). El `sha256sum -c` verifica el binario.
+- **`sudo`**: instala Node/npm con `apt-get` (como pide `templates/build-react-native.yml`). El buildserver de F-Droid (Debian bookworm) trae **Node 18.19**, que cumple el mínimo de RN 0.79 (Node ≥ 18.18) — no hace falta descargar un tarball de Node. Se evita así el patrón de bajar y ejecutar binarios en tiempo de build, que los revisores rechazan.
 - **`ndk`**: la versión que usa el proyecto (`apps/mobile/android/build.gradle`).
 - **`init`**: `npm ci` desde la raíz del repo (`cd ../../../..` porque `subdir` es `apps/mobile/android/app`). La app es un monorepo npm: la raíz instala los workspaces (`apps/*` + `packages/*`). Nota: los tags anteriores a la migración a monorepo (≤ `v0.0.7`) tenían la app en la raíz, así que un build de esos tags usaría `subdir: android/app` y `cd ../..`.
 - **`prebuild`**: activa la propiedad `fdroidUniversal` (la escribe en `apps/mobile/android/gradle.properties`, un nivel por encima del `subdir`). Con ella, `app/build.gradle` **desactiva las ABI splits** y emite un único APK universal con las 4 ABIs y el `versionCode` base `16` (sin la propiedad, un build normal saca 4 APKs por-ABI con codes 151-154, que no encajan en una entrada `Builds` única).
@@ -123,7 +120,8 @@ Alternativa más lenta: abrir un **RFP** (Request For Packaging) en `gitlab.com/
 1. **New Architecture** (`newArchEnabled=true` en `android/gradle.properties`): activa codegen C++ nativo, lo más propenso a romper en el entorno de F-Droid. Si muere ahí, la salida más simple es desactivarla solo para F-Droid con un `sed` en `prebuild`, pero conviene probar tal cual primero.
 2. **NDK `27.1.12297006`**: tiene que estar disponible en el buildserver; si no, se ajusta a la que tengan.
 3. **`output`**: si `fdroid build` no encuentra el APK en esa ruta, mira dónde lo dejó `assembleRelease` y corrige la línea.
-4. **Node 20 vs RN 0.79**: compatibles, pero si algún módulo nativo se queja, sube/baja la versión de Node (con su checksum correspondiente de `nodejs.org/dist/vX/SHASUMS256.txt`).
+4. **Node del buildserver vs RN 0.79**: `apt-get install npm` en bookworm da Node 18.19 (compatible con RN 0.79). Si en el futuro RN exige una versión mayor que la de Debian, el patrón aceptable es instalar Node vía la imagen del buildserver, no descargar un tarball suelto.
+5. **Rama del fork desincronizada**: si el MR queda muchos commits por detrás de `master`, el pipeline puede fallar con «yaml invalid / 0 jobs» (el `.gitlab-ci.yml` viejo del fork ya no es válido). Solución: `git fetch upstream && git rebase upstream/master && git push -f`. No uses el botón «Rebase» del MR: rebasa sin lanzar pipeline.
 
 ## Cada nueva versión
 
