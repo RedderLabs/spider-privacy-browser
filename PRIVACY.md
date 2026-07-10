@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: 2026-07-04_
+_Last updated: 2026-07-10_
 
 Spider Privacy Browser does not collect, store, or transmit any personal data.
 
@@ -14,4 +14,4 @@ Spider Privacy Browser does not collect, store, or transmit any personal data.
 
 Because there is no server and no data collection, there is nothing for us to share, sell, or disclose.
 
-**Contact:** open an issue at <https://github.com/RedderLabs/spider-privacy-browser/issues> (or add a contact email here before publishing).
+**Contact:** email <redderlabs@proton.me>, or open an issue at <https://github.com/RedderLabs/spider-privacy-browser/issues>.
